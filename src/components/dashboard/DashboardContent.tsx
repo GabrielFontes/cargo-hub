@@ -4,7 +4,7 @@ import { FinancialCard } from "./FinancialCard";
 import { Heatmap } from "./Heatmap";
 import { ProjectedVsRealizedChart } from "./ProjectedVsRealizedChart";
 import { AnnualSummary } from "./AnnualSummary";
-import { IndicatorCard } from "./IndicatorCard";
+import { IndicatorCardMonthly } from "./IndicatorCardMonthly";
 import {
   Select,
   SelectContent,
@@ -54,36 +54,102 @@ const annualSummaryItems = [
   { label: "(=) Lucro Líquido Total", value: "R$ 10.000.000", isTotal: true, type: "positive" as const },
 ];
 
-const discoveryIndicators = [
-  { name: "Número de ligações feitas", previsto: 3, realizado: 0, percentage: 0 },
-  { name: "Número de visitas no site", previsto: 10, realizado: 9, percentage: 111 },
-  { name: "Número de visitantes únicos", previsto: 50, realizado: 25, percentage: 50 },
-  { name: "Seguidores Instagram", previsto: 100, realizado: 45, percentage: 45 },
-  { name: "Seguidores LinkedIn", previsto: 100, realizado: 50, percentage: 50 },
-  { name: "Formulários preenchidos", previsto: 20, realizado: 5, percentage: 25 },
+const indicatorMonths = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago"];
+
+const discoveryIndicatorsMonthly = [
+  { 
+    name: "Ligações feitas", 
+    currentPrevisto: 3, 
+    currentRealizado: 0, 
+    percentage: 0,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 3, realizado: [0, 1, 2, 1, 0, 2, 1, 0][i] }))
+  },
+  { 
+    name: "Visitas no site", 
+    currentPrevisto: 10, 
+    currentRealizado: 9, 
+    percentage: 90,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 10, realizado: [5, 7, 8, 6, 9, 11, 10, 9][i] }))
+  },
+  { 
+    name: "Visitantes únicos", 
+    currentPrevisto: 50, 
+    currentRealizado: 25, 
+    percentage: 50,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 50, realizado: [20, 25, 30, 28, 35, 40, 32, 25][i] }))
+  },
 ];
 
-const salesIndicators = [
-  { name: "Lojas visitadas", previsto: 2, realizado: 1, percentage: 50 },
-  { name: "Reuniões realizadas", previsto: 10, realizado: 5, percentage: 50 },
-  { name: "Visitas feitas", previsto: 15, realizado: 8, percentage: 53 },
-  { name: "Propostas enviadas", previsto: 8, realizado: 4, percentage: 50 },
-  { name: "Propostas aprovadas", previsto: 5, realizado: 3, percentage: 60 },
-  { name: "Pedidos emitidos", previsto: 5, realizado: 3, percentage: 60 },
+const salesIndicatorsMonthly = [
+  { 
+    name: "Reuniões realizadas", 
+    currentPrevisto: 10, 
+    currentRealizado: 5, 
+    percentage: 50,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 10, realizado: [3, 5, 7, 6, 8, 4, 6, 5][i] }))
+  },
+  { 
+    name: "Propostas enviadas", 
+    currentPrevisto: 8, 
+    currentRealizado: 4, 
+    percentage: 50,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 8, realizado: [2, 4, 5, 3, 6, 7, 5, 4][i] }))
+  },
+  { 
+    name: "Propostas aprovadas", 
+    currentPrevisto: 5, 
+    currentRealizado: 3, 
+    percentage: 60,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 5, realizado: [1, 2, 3, 2, 4, 5, 4, 3][i] }))
+  },
 ];
 
-const deliveryIndicators = [
-  { name: "Entregas realizadas", previsto: 100, realizado: 95, percentage: 95 },
-  { name: "Entregas no prazo", previsto: 100, realizado: 88, percentage: 88 },
-  { name: "Devoluções", previsto: 5, realizado: 3, percentage: 60 },
-  { name: "Satisfação do cliente", previsto: 95, realizado: 92, percentage: 97 },
+const deliveryIndicatorsMonthly = [
+  { 
+    name: "Entregas realizadas", 
+    currentPrevisto: 100, 
+    currentRealizado: 95, 
+    percentage: 95,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 100, realizado: [85, 90, 92, 88, 95, 98, 96, 95][i] }))
+  },
+  { 
+    name: "Entregas no prazo", 
+    currentPrevisto: 100, 
+    currentRealizado: 88, 
+    percentage: 88,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 100, realizado: [80, 82, 85, 83, 88, 90, 87, 88][i] }))
+  },
+  { 
+    name: "Satisfação do cliente", 
+    currentPrevisto: 95, 
+    currentRealizado: 92, 
+    percentage: 97,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 95, realizado: [88, 90, 91, 89, 93, 94, 93, 92][i] }))
+  },
 ];
 
-const supportIndicators = [
-  { name: "Tickets resolvidos", previsto: 50, realizado: 48, percentage: 96 },
-  { name: "Tempo médio de resposta", previsto: 24, realizado: 18, percentage: 133 },
-  { name: "NPS", previsto: 80, realizado: 75, percentage: 94 },
-  { name: "Retenção de clientes", previsto: 90, realizado: 88, percentage: 98 },
+const supportIndicatorsMonthly = [
+  { 
+    name: "Tickets resolvidos", 
+    currentPrevisto: 50, 
+    currentRealizado: 48, 
+    percentage: 96,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 50, realizado: [40, 42, 45, 43, 47, 49, 48, 48][i] }))
+  },
+  { 
+    name: "Tempo médio resposta (h)", 
+    currentPrevisto: 24, 
+    currentRealizado: 18, 
+    percentage: 133,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 24, realizado: [30, 28, 25, 22, 20, 18, 17, 18][i] }))
+  },
+  { 
+    name: "NPS", 
+    currentPrevisto: 80, 
+    currentRealizado: 75, 
+    percentage: 94,
+    monthlyData: indicatorMonths.map((month, i) => ({ month, previsto: 80, realizado: [65, 68, 70, 72, 74, 76, 75, 75][i] }))
+  },
 ];
 
 export function DashboardContent() {
@@ -174,26 +240,26 @@ export function DashboardContent() {
 
         {/* Row 3: Indicators */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Indicadores</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Indicadores Mensais</h2>
           <div className="grid grid-cols-4 gap-4">
-            <IndicatorCard
+            <IndicatorCardMonthly
               title="Indicadores de Descoberta"
-              indicators={discoveryIndicators}
+              indicators={discoveryIndicatorsMonthly}
               rate={50}
             />
-            <IndicatorCard
+            <IndicatorCardMonthly
               title="Indicadores de Venda"
-              indicators={salesIndicators}
+              indicators={salesIndicatorsMonthly}
               rate={54}
             />
-            <IndicatorCard
+            <IndicatorCardMonthly
               title="Indicadores de Entrega"
-              indicators={deliveryIndicators}
+              indicators={deliveryIndicatorsMonthly}
               rate={85}
             />
-            <IndicatorCard
+            <IndicatorCardMonthly
               title="Indicadores de Suporte"
-              indicators={supportIndicators}
+              indicators={supportIndicatorsMonthly}
               rate={105}
             />
           </div>
