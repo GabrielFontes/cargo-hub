@@ -1,12 +1,6 @@
 import { Brain, BarChart3, ArrowLeftRight, Target, Heart, Briefcase, GitBranch, TrendingUp, StickyNote, ListTodo, CheckSquare, ChevronDown, ChevronRight, Home, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 interface MenuItem {
   icon: React.ElementType;
@@ -19,6 +13,7 @@ interface MenuSection {
   id: string;
   title: string;
   icon: React.ElementType;
+  href: string;
   items: MenuItem[];
 }
 
@@ -27,30 +22,33 @@ const menuSections: MenuSection[] = [
     id: "mente",
     title: "Mente",
     icon: Brain,
+    href: "/mente",
     items: [
-      { icon: BarChart3, label: "DRE", href: "/" },
-      { icon: ArrowLeftRight, label: "Movimentações", href: "/movimentacoes" },
-      { icon: Target, label: "Projeções", href: "/projecoes" },
+      { icon: BarChart3, label: "DRE", href: "/mente" },
+      { icon: ArrowLeftRight, label: "Movimentações", href: "/mente/movimentacoes" },
+      { icon: Target, label: "Projeções", href: "/mente/projecoes" },
     ],
   },
   {
     id: "corpo",
     title: "Corpo",
     icon: GitBranch,
+    href: "/corpo",
     items: [
-      { icon: Briefcase, label: "Cargos", href: "/cargos", badge: 5 },
-      { icon: GitBranch, label: "Fluxos", href: "/fluxos" },
-      { icon: TrendingUp, label: "Indicadores", href: "/indicadores" },
+      { icon: Briefcase, label: "Cargos", href: "/corpo", badge: 5 },
+      { icon: GitBranch, label: "Fluxos", href: "/corpo/fluxos" },
+      { icon: TrendingUp, label: "Indicadores", href: "/corpo/indicadores" },
     ],
   },
   {
     id: "alma",
     title: "Alma",
     icon: Heart,
+    href: "/alma",
     items: [
-      { icon: StickyNote, label: "Anotações", href: "/notas" },
-      { icon: ListTodo, label: "Atividades", href: "/rotinas", badge: 10 },
-      { icon: CheckSquare, label: "Tarefas", href: "/tarefas", badge: 10 },
+      { icon: StickyNote, label: "Anotações", href: "/alma" },
+      { icon: ListTodo, label: "Atividades", href: "/alma/atividades", badge: 10 },
+      { icon: CheckSquare, label: "Tarefas", href: "/alma/tarefas", badge: 10 },
     ],
   },
 ];
@@ -62,32 +60,17 @@ interface SidebarProps {
 export function Sidebar({ activePage }: SidebarProps) {
   const location = useLocation();
   
-  // Determine which section should be open based on current route
-  const getActiveSection = () => {
-    for (const section of menuSections) {
-      if (section.items.some(item => location.pathname === item.href)) {
-        return section.id;
-      }
-    }
-    return "mente";
-  };
-
-  const [openSections, setOpenSections] = useState<string[]>([getActiveSection()]);
-  
   const isActive = (href: string) => {
     return location.pathname === href;
   };
 
   const isSectionActive = (section: MenuSection) => {
-    return section.items.some(item => location.pathname === item.href);
+    return location.pathname.startsWith(section.href.split('/')[1] ? `/${section.href.split('/')[1]}` : section.href);
   };
 
-  const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => 
-      prev.includes(sectionId) 
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
-    );
+  const isInSection = (section: MenuSection) => {
+    const sectionPath = `/${section.id}`;
+    return location.pathname === sectionPath || location.pathname.startsWith(`${sectionPath}/`);
   };
 
   return (
@@ -125,17 +108,13 @@ export function Sidebar({ activePage }: SidebarProps) {
       {/* Menu */}
       <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
         {menuSections.map((section) => {
-          const isOpen = openSections.includes(section.id);
-          const sectionActive = isSectionActive(section);
+          const sectionActive = isInSection(section);
           
           return (
-            <Collapsible 
-              key={section.id} 
-              open={isOpen}
-              onOpenChange={() => toggleSection(section.id)}
-              className="mb-1"
-            >
-              <CollapsibleTrigger 
+            <div key={section.id} className="mb-1">
+              {/* Section Header - Now a Link */}
+              <Link
+                to={section.href}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
                   sectionActive
@@ -148,44 +127,43 @@ export function Sidebar({ activePage }: SidebarProps) {
                   sectionActive ? "text-sidebar-accent-foreground" : "text-primary"
                 )} />
                 <span className="flex-1 text-left">{section.title}</span>
-                {isOpen ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pl-4 mt-1">
-                <ul className="space-y-0.5 border-l-2 border-border pl-3">
-                  {section.items.map((item) => {
-                    const active = isActive(item.href);
-                    return (
-                      <li key={item.label}>
-                        <Link
-                          to={item.href}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                            active
-                              ? "text-primary font-medium"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                          )}
-                        >
-                          <item.icon className={cn(
-                            "w-4 h-4",
-                            active ? "text-primary" : "text-muted-foreground"
-                          )} />
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {item.badge !== undefined && item.badge > 0 && (
-                            <span className="min-w-[20px] h-5 px-1.5 rounded-md text-xs flex items-center justify-center bg-primary text-primary-foreground">
-                              {item.badge}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </CollapsibleContent>
-            </Collapsible>
+              </Link>
+              
+              {/* Sub-items - Only show when in this section */}
+              {sectionActive && (
+                <div className="pl-4 mt-1">
+                  <ul className="space-y-0.5 border-l-2 border-border pl-3">
+                    {section.items.map((item) => {
+                      const active = isActive(item.href);
+                      return (
+                        <li key={item.label}>
+                          <Link
+                            to={item.href}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                              active
+                                ? "text-primary font-medium"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <item.icon className={cn(
+                              "w-4 h-4",
+                              active ? "text-primary" : "text-muted-foreground"
+                            )} />
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.badge !== undefined && item.badge > 0 && (
+                              <span className="min-w-[20px] h-5 px-1.5 rounded-md text-xs flex items-center justify-center bg-primary text-primary-foreground">
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
