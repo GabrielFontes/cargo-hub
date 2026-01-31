@@ -49,10 +49,6 @@
     --badge-purple: 262 82% 49%;
     --badge-purple-foreground: 0 0% 100%;
     --table-header: 220 14% 96%;
-    
-    /* Chart colors */
-    --chart-positive: 160 84% 39%;
-    --chart-warning: 38 92% 50%;
   }
 
   .dark {
