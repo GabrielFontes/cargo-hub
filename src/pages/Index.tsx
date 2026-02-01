@@ -4,7 +4,7 @@ import { CargosContent } from "@/components/CargosContent";
 const Index = () => {
   return (
     <div className="flex min-h-screen w-full">
-      <Sidebar activePage="cargos" />
+      <Sidebar />
       <CargosContent />
     </div>
   );
