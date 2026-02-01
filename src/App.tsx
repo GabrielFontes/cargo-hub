@@ -4,11 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Mente from "./pages/Mente";
-//import MenteDRE from "./pages/MenteDRE";
 import Corpo from "./pages/Corpo";
 import CorpoCargos from "./pages/CorpoCargos";
 import Alma from "./pages/Alma";
 import Indicadores from "./pages/Indicadores";
+import Projecoes from "./pages/Projecoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Navigate to="/mente" replace />} />
           {/* Mente routes */}
           <Route path="/mente" element={<Mente />} />
+          <Route path="/mente/projecoes" element={<Projecoes />} />
           {/* Corpo routes */}
           <Route path="/corpo" element={<Corpo />} />
           <Route path="/corpo/cargos" element={<CorpoCargos />} />

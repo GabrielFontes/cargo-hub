@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, Plus, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { IndicatorEditDialog } from "./IndicatorEditDialog";
 
-interface IndicatorData {
+export interface IndicatorData {
   name: string;
   previsto: number[];
   realizado2022: number[];
@@ -16,6 +19,7 @@ interface IndicatorHeatmapProps {
   title: string;
   indicators: IndicatorData[];
   months: string[];
+  onIndicatorsChange?: (indicators: IndicatorData[]) => void;
 }
 
 const YEARS = [2022, 2023, 2024, 2025, 2026];
@@ -44,9 +48,14 @@ function getRateColor(rate: number): string {
   return "bg-red-500/20 text-red-700 font-medium";
 }
 
-export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmapProps) {
+export function IndicatorHeatmap({ title, indicators: initialIndicators, months, onIndicatorsChange }: IndicatorHeatmapProps) {
+  const [indicators, setIndicators] = useState<IndicatorData[]>(initialIndicators);
   const [selectedYears, setSelectedYears] = useState<number[]>([CURRENT_YEAR]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingIndicator, setEditingIndicator] = useState<IndicatorData | null>(null);
+  const [addingToGroup, setAddingToGroup] = useState<string | null>(null);
+  const [newIndicatorName, setNewIndicatorName] = useState("");
 
   const toggleYear = (year: number) => {
     setSelectedYears(prev => 
@@ -69,10 +78,10 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
   const maxValue = Math.max(...allValues, 1);
 
   const groupsConfig = [
-    { label: "Indicadores de Descoberta", start: 0, end: 5, taxaLabel: "Taxa de Descoberta" },
-    { label: "Indicadores de Venda",      start: 5, end: 10, taxaLabel: "Taxa de Venda" },
-    { label: "Indicadores de Entrega",    start: 10, end: 15, taxaLabel: "Taxa de Entrega" },
-    { label: "Indicadores de Suporte",    start: 15, end: indicators.length, taxaLabel: "Taxa de Eficiência" },
+    { label: "Indicadores de Descoberta", start: 0, end: 6, taxaLabel: "Taxa de Descoberta" },
+    { label: "Indicadores de Venda", start: 6, end: 12, taxaLabel: "Taxa de Venda" },
+    { label: "Indicadores de Entrega", start: 12, end: 16, taxaLabel: "Taxa de Entrega" },
+    { label: "Indicadores de Suporte", start: 16, end: indicators.length, taxaLabel: "Taxa de Eficiência" },
   ];
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
@@ -97,24 +106,70 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
     return Math.round((totalRealizado / totalPrevisto) * 100);
   };
 
-  // Filtra indicadores com base no termo de busca
   const filteredIndicators = indicators.filter(ind =>
     ind.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
 
-  // Função auxiliar para verificar se um grupo tem algum indicador visível após filtro
-  const groupHasVisibleIndicators = (start: number, end: number) => {
-    return filteredIndicators.some(ind => {
-      const index = indicators.indexOf(ind);
-      return index >= start && index < end;
-    });
+  const openEditDialog = (indicator: IndicatorData) => {
+    setEditingIndicator(indicator);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveIndicator = (updatedIndicator: IndicatorData) => {
+    if (editingIndicator) {
+      // Editing existing
+      const newIndicators = indicators.map(ind => 
+        ind.name === editingIndicator.name ? updatedIndicator : ind
+      );
+      setIndicators(newIndicators);
+      onIndicatorsChange?.(newIndicators);
+    } else {
+      // Adding new
+      const newIndicators = [...indicators, updatedIndicator];
+      setIndicators(newIndicators);
+      onIndicatorsChange?.(newIndicators);
+    }
+    setEditingIndicator(null);
+  };
+
+  const handleAddIndicator = (groupLabel: string, insertIndex: number) => {
+    if (!newIndicatorName.trim()) {
+      setAddingToGroup(null);
+      return;
+    }
+
+    const newIndicator: IndicatorData = {
+      name: newIndicatorName.trim(),
+      previsto: Array(12).fill(0),
+      realizado2022: Array(12).fill(0),
+      realizado2023: Array(12).fill(0),
+      realizado2024: Array(12).fill(0),
+      realizado2025: Array(12).fill(0),
+      realizado2026: Array(12).fill(0),
+    };
+
+    const newIndicators = [...indicators];
+    newIndicators.splice(insertIndex, 0, newIndicator);
+    setIndicators(newIndicators);
+    onIndicatorsChange?.(newIndicators);
+    setNewIndicatorName("");
+    setAddingToGroup(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, groupLabel: string, insertIndex: number) => {
+    if (e.key === "Enter") {
+      handleAddIndicator(groupLabel, insertIndex);
+    } else if (e.key === "Escape") {
+      setAddingToGroup(null);
+      setNewIndicatorName("");
+    }
   };
 
   return (
     <div className="bg-card border border-border rounded-lg p-4">
       <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
 
-      {/* Barra de busca */}
+      {/* Search bar */}
       <div className="relative mb-4">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -136,7 +191,7 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
         )}
       </div>
 
-      {/* Guias de anos */}
+      {/* Year tabs */}
       <div className="flex flex-wrap gap-2 mb-4">
         {YEARS.map(year => (
           <button
@@ -160,7 +215,7 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
         <table className="w-full text-xs border-separate border-spacing-0.5">
           <thead>
             <tr>
-              <th className="text-left p-1 text-muted-foreground font-normal min-w-[160px] w-[160px] sticky left-0 bg-card z-10">
+              <th className="text-left p-1 text-muted-foreground font-normal min-w-[200px] w-[200px] sticky left-0 bg-card z-10">
                 Indicador
               </th>
 
@@ -188,15 +243,13 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
           </thead>
 
           <tbody>
-            {groupsConfig.map(group => {
-              // Filtra apenas os indicadores do grupo que batem com a busca
+            {groupsConfig.map((group, groupIdx) => {
               const groupIndicators = indicators
                 .slice(group.start, group.end)
                 .filter(ind => 
                   ind.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
                 );
 
-              // Se não houver indicadores visíveis no grupo após filtro, pula o grupo inteiro
               if (groupIndicators.length === 0 && searchTerm.trim() !== "") {
                 return null;
               }
@@ -221,10 +274,20 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
                   {isExpanded && groupIndicators.map(indicator => (
                     <tr key={indicator.name}>
                       <td
-                        className="p-1 text-foreground truncate max-w-[160px] w-[160px] h-8 align-middle sticky left-0 bg-card z-0"
+                        className="p-1 text-foreground truncate max-w-[200px] w-[200px] h-8 align-middle sticky left-0 bg-card z-0"
                         title={indicator.name}
                       >
-                        {indicator.name}
+                        <div className="flex items-center gap-1">
+                          <span className="truncate flex-1">{indicator.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
+                            onClick={() => openEditDialog(indicator)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </td>
 
                       {months.map((_, monthIdx) => (
@@ -267,7 +330,39 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
                     </tr>
                   ))}
 
-                  {/* Linha da Taxa – merge nas duas últimas colunas */}
+                  {/* Add indicator row */}
+                  {isExpanded && (
+                    <tr>
+                      <td
+                        colSpan={1 + months.length * (sortedSelectedYears.length + (showPrevisto ? 1 : 0))}
+                        className="p-1 sticky left-0 bg-card z-0"
+                      >
+                        {addingToGroup === group.label ? (
+                          <Input
+                            autoFocus
+                            value={newIndicatorName}
+                            onChange={(e) => setNewIndicatorName(e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, group.label, group.end)}
+                            onBlur={() => handleAddIndicator(group.label, group.end)}
+                            placeholder="Nome do indicador..."
+                            className="h-7 text-xs max-w-[200px]"
+                          />
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                            onClick={() => setAddingToGroup(group.label)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Adicionar indicador
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Taxa row */}
                   <tr className="bg-muted/30 font-medium">
                     <td className="p-1.5 text-right text-[11px] text-muted-foreground pr-3 sticky left-0 bg-card z-0">
                       {group.taxaLabel}
@@ -326,6 +421,14 @@ export function IndicatorHeatmap({ title, indicators, months }: IndicatorHeatmap
           <span>Previsto</span>
         </div>
       </div>
+
+      <IndicatorEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        indicator={editingIndicator}
+        onSave={handleSaveIndicator}
+        months={months}
+      />
     </div>
   );
 }
