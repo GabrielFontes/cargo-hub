@@ -1,6 +1,8 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Brain, BarChart3, ArrowLeftRight, Target } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DashboardContent } from "@/components/dashboard/DashboardContent";
+
 
 const Mente = () => {
   const items = [
@@ -40,8 +42,12 @@ const Mente = () => {
             </Link>
           ))}
         </div>
+          <div className="flex min-h-screen w-full">
+          <DashboardContent />
+        </div>
       </main>
-    </div>
+    </div>   
+    
   );
 };
 

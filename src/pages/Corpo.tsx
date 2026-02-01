@@ -1,6 +1,9 @@
 import { Sidebar } from "@/components/Sidebar";
 import { GitBranch, Briefcase, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { IndicadoresDash } from "@/components/dashboard/Indicadores";
+
+
 
 const Corpo = () => {
   const items = [
@@ -45,6 +48,11 @@ const Corpo = () => {
             </Link>
           ))}
         </div>
+
+        <div className="flex min-h-screen w-full">
+          <IndicadoresDash />
+        </div>
+
       </main>
     </div>
   );
