@@ -24,7 +24,7 @@ const menuSections: MenuSection[] = [
     icon: Brain,
     href: "/mente",
     items: [
-      { icon: BarChart3, label: "DRE", href: "/mente" },
+      { icon: BarChart3, label: "DRE", href: "/mente/dre" },
       { icon: ArrowLeftRight, label: "Movimentações", href: "/mente/movimentacoes" },
       { icon: Target, label: "Projeções", href: "/mente/projecoes" },
     ],
@@ -35,7 +35,7 @@ const menuSections: MenuSection[] = [
     icon: GitBranch,
     href: "/corpo",
     items: [
-      { icon: Briefcase, label: "Cargos", href: "/corpo", badge: 5 },
+      { icon: Briefcase, label: "Cargos", href: "/corpo/cargos", badge: 5 },
       { icon: GitBranch, label: "Fluxos", href: "/corpo/fluxos" },
       { icon: TrendingUp, label: "Indicadores", href: "/corpo/indicadores" },
     ],
@@ -46,7 +46,7 @@ const menuSections: MenuSection[] = [
     icon: Heart,
     href: "/alma",
     items: [
-      { icon: StickyNote, label: "Anotações", href: "/alma" },
+      { icon: StickyNote, label: "Anotações", href: "/alma/anotacoes" },
       { icon: ListTodo, label: "Atividades", href: "/alma/atividades", badge: 10 },
       { icon: CheckSquare, label: "Tarefas", href: "/alma/tarefas", badge: 10 },
     ],
