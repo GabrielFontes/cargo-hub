@@ -62,7 +62,7 @@ export function DashboardContent() {
       <div className="p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard Financeiro</h1>
+          <h1 className="text-3xl font-bold text-foreground"></h1>
           <div className="flex items-center gap-3">
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-[160px]">

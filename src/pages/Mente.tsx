@@ -25,7 +25,7 @@ const Mente = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+{/*        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((item) => (
             <Link
               key={item.label}
@@ -41,7 +41,7 @@ const Mente = () => {
               <p className="text-sm text-muted-foreground">{item.description}</p>
             </Link>
           ))}
-        </div>
+        </div>*/}
           <div className="flex min-h-screen w-full">
           <DashboardContent />
         </div>

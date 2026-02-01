@@ -2,7 +2,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { GitBranch, Briefcase, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { IndicadoresDash } from "@/components/dashboard/Indicadores";
-
+import { RateCard } from "@/components/Indicadores/RateCard";
+import { Calendar, Search, ShoppingCart, Truck, Headphones } from "lucide-react";
 
 
 const Corpo = () => {
@@ -26,27 +27,32 @@ const Corpo = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className="group p-6 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-lg transition-all relative"
-            >
-              {item.badge && (
-                <span className="absolute top-4 right-4 min-w-[24px] h-6 px-2 rounded-full text-xs flex items-center justify-center bg-primary text-primary-foreground font-medium">
-                  {item.badge}
-                </span>
-              )}
-              <div className="flex items-center gap-4 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <item.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h2 className="text-lg font-semibold text-foreground">{item.label}</h2>
-              </div>
-              <p className="text-sm text-muted-foreground">{item.description}</p>
-            </Link>
-          ))}
+      {/* Row 1: Rate Cards */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <RateCard
+            title="Taxa de Descoberta"
+            rate={50}
+            icon={Search}
+            color="discovery"
+          />
+          <RateCard
+            title="Taxa de Venda"
+            rate={54}
+            icon={ShoppingCart}
+            color="sales"
+          />
+          <RateCard
+            title="Taxa de Entrega"
+            rate={85}
+            icon={Truck}
+            color="delivery"
+          />
+          <RateCard
+            title="Taxa de Eficiência"
+            rate={105}
+            icon={Headphones}
+            color="efficiency"
+          />
         </div>
 
         <div className="flex min-h-screen w-full">

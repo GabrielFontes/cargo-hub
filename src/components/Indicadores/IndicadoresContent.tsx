@@ -160,33 +160,6 @@ export function IndicadoresContent() {
           </div>
         </div>
 
-        {/* Row 1: Rate Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <RateCard
-            title="Taxa de Descoberta"
-            rate={50}
-            icon={Search}
-            color="discovery"
-          />
-          <RateCard
-            title="Taxa de Venda"
-            rate={54}
-            icon={ShoppingCart}
-            color="sales"
-          />
-          <RateCard
-            title="Taxa de Entrega"
-            rate={85}
-            icon={Truck}
-            color="delivery"
-          />
-          <RateCard
-            title="Taxa de Eficiência"
-            rate={105}
-            icon={Headphones}
-            color="efficiency"
-          />
-        </div>
 
         {/* Row 2: Indicator Heatmaps */}
         <div className="grid grid-cols-1 gap-4 mb-6">
