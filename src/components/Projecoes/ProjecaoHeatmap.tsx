@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil } from "lucide-react";
+import { Search, Plus, Pencil, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProjecaoEditDialog } from "./ProjecaoEditDialog";
+import { ProjecaoSidePanel } from "./ProjecaoSidePanel";
+import { ProjecaoItem } from "./types";
 
-export interface ProjecaoItem {
-  id: string;
-  name: string;
-  valores2022: number[];
-  valores2023: number[];
-  valores2024: number[];
-  valores2025: number[];
-  valores2026: number[];
-}
+export type { ProjecaoItem } from "./types";
 
 interface ProjecaoHeatmapProps {
   title: string;
@@ -27,11 +21,16 @@ interface ProjecaoHeatmapProps {
 const YEARS = [2022, 2023, 2024, 2025, 2026];
 const CURRENT_YEAR = 2026;
 
-function getHeatmapColor(value: number, maxValue: number, type: "expense" | "revenue"): string {
+function getHeatmapColor(value: number, maxValue: number, type: "expense" | "revenue" | "previsto"): string {
   if (value === 0) return "bg-muted";
   const intensity = Math.min(value / maxValue, 1);
 
-  if (type === "expense") {
+  if (type === "previsto") {
+    if (intensity > 0.7) return "bg-slate-500";
+    if (intensity > 0.4) return "bg-slate-400";
+    if (intensity > 0.2) return "bg-slate-300";
+    return "bg-slate-200";
+  } else if (type === "expense") {
     if (intensity > 0.7) return "bg-rose-600";
     if (intensity > 0.4) return "bg-rose-500";
     if (intensity > 0.2) return "bg-rose-400";
@@ -65,6 +64,10 @@ export function ProjecaoHeatmap({
   const [newItemName, setNewItemName] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProjecaoItem | null>(null);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [sidePanelItem, setSidePanelItem] = useState<ProjecaoItem | null>(null);
+
+  const showPrevisto = true;
 
   const toggleYear = (year: number) => {
     setSelectedYears(prev => 
@@ -76,18 +79,24 @@ export function ProjecaoHeatmap({
 
   const sortedSelectedYears = [...selectedYears].sort((a, b) => a - b);
 
-  const allValues = sortedSelectedYears.flatMap(year => {
-    const key = `valores${year}` as keyof ProjecaoItem;
-    return items.flatMap(item => (item[key] as number[] | undefined) || []);
-  }).filter(v => v !== undefined);
+  const allValues = [
+    ...items.flatMap(i => i.previsto || []),
+    ...sortedSelectedYears.flatMap(year => {
+      const key = `valores${year}` as keyof ProjecaoItem;
+      return items.flatMap(item => (item[key] as number[] | undefined) || []);
+    })
+  ].filter(v => v !== undefined);
   const maxValue = Math.max(...allValues, 1);
 
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
 
-  const calculateMonthlyTotal = (monthIdx: number): number => {
+  const calculateMonthlyTotal = (monthIdx: number, type: "realizado" | "previsto"): number => {
     return items.reduce((sum, item) => {
+      if (type === "previsto") {
+        return sum + (item.previsto?.[monthIdx] || 0);
+      }
       return sum + (item.valores2026?.[monthIdx] || 0);
     }, 0);
   };
@@ -101,11 +110,13 @@ export function ProjecaoHeatmap({
     const newItem: ProjecaoItem = {
       id: `item-${Date.now()}`,
       name: newItemName.trim(),
+      hasFichaTecnica: false,
       valores2022: Array(12).fill(0),
       valores2023: Array(12).fill(0),
       valores2024: Array(12).fill(0),
       valores2025: Array(12).fill(0),
       valores2026: Array(12).fill(0),
+      previsto: Array(12).fill(0),
     };
 
     onAddItem(newItem);
@@ -125,6 +136,11 @@ export function ProjecaoHeatmap({
   const openEditDialog = (item: ProjecaoItem) => {
     setEditingItem(item);
     setEditDialogOpen(true);
+  };
+
+  const openSidePanel = (item: ProjecaoItem) => {
+    setSidePanelItem(item);
+    setSidePanelOpen(true);
   };
 
   return (
@@ -177,7 +193,7 @@ export function ProjecaoHeatmap({
         <table className="w-full text-xs border-separate border-spacing-0.5">
           <thead>
             <tr>
-              <th className="text-left p-1 text-muted-foreground font-normal min-w-[180px] w-[180px] sticky left-0 bg-card z-10">
+              <th className="text-left p-1 text-muted-foreground font-normal min-w-[200px] w-[200px] sticky left-0 bg-card z-10">
                 Item
               </th>
 
@@ -191,6 +207,11 @@ export function ProjecaoHeatmap({
                       {month.slice(0, 3)} {year}
                     </th>
                   ))}
+                  {showPrevisto && (
+                    <th className="text-center p-1 text-muted-foreground font-normal min-w-[60px] w-[60px]">
+                      {month.slice(0, 3)} P
+                    </th>
+                  )}
                 </React.Fragment>
               ))}
             </tr>
@@ -200,7 +221,7 @@ export function ProjecaoHeatmap({
             {filteredItems.map(item => (
               <tr key={item.id}>
                 <td
-                  className="p-1 text-foreground truncate max-w-[180px] w-[180px] h-8 align-middle sticky left-0 bg-card z-0"
+                  className="p-1 text-foreground truncate max-w-[200px] w-[200px] h-8 align-middle sticky left-0 bg-card z-0"
                   title={item.name}
                 >
                   <div className="flex items-center gap-1">
@@ -208,10 +229,20 @@ export function ProjecaoHeatmap({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5 shrink-0"
+                      className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
                       onClick={() => openEditDialog(item)}
+                      title="Editar"
                     >
                       <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
+                      onClick={() => openSidePanel(item)}
+                      title="Abrir painel"
+                    >
+                      <ExternalLink className="h-3 w-3" />
                     </Button>
                   </div>
                 </td>
@@ -236,6 +267,21 @@ export function ProjecaoHeatmap({
                         </td>
                       );
                     })}
+
+                    {showPrevisto && (
+                      <td className="p-0.5 w-[60px] h-8">
+                        <div
+                          className={cn(
+                            "w-full h-full rounded flex items-center justify-center text-[10px] font-medium",
+                            getHeatmapColor(item.previsto?.[monthIdx] || 0, maxValue, "previsto"),
+                            (item.previsto?.[monthIdx] || 0) > 0 ? "text-white" : "text-muted-foreground"
+                          )}
+                          title={`Previsto: R$ ${(item.previsto?.[monthIdx] || 0).toLocaleString('pt-BR')}`}
+                        >
+                          {formatCurrency(item.previsto?.[monthIdx] || 0)}
+                        </div>
+                      </td>
+                    )}
                   </React.Fragment>
                 ))}
               </tr>
@@ -245,7 +291,7 @@ export function ProjecaoHeatmap({
             {isAdding ? (
               <tr>
                 <td
-                  colSpan={1 + months.length * sortedSelectedYears.length}
+                  colSpan={1 + months.length * (sortedSelectedYears.length + (showPrevisto ? 1 : 0))}
                   className="p-1 sticky left-0 bg-card z-0"
                 >
                   <Input
@@ -262,7 +308,7 @@ export function ProjecaoHeatmap({
             ) : (
               <tr>
                 <td
-                  colSpan={1 + months.length * sortedSelectedYears.length}
+                  colSpan={1 + months.length * (sortedSelectedYears.length + (showPrevisto ? 1 : 0))}
                   className="p-1 sticky left-0 bg-card z-0"
                 >
                   <Button
@@ -285,7 +331,9 @@ export function ProjecaoHeatmap({
               </td>
 
               {months.map((_, monthIdx) => {
-                const total = calculateMonthlyTotal(monthIdx);
+                const totalRealizado = calculateMonthlyTotal(monthIdx, "realizado");
+                const totalPrevisto = calculateMonthlyTotal(monthIdx, "previsto");
+                
                 return (
                   <React.Fragment key={monthIdx}>
                     {sortedSelectedYears
@@ -305,7 +353,7 @@ export function ProjecaoHeatmap({
                           : "bg-emerald-500/20 text-emerald-700"
                       )}
                     >
-                      {formatCurrency(total)}
+                      {formatCurrency(totalRealizado)}
                     </td>
 
                     {sortedSelectedYears
@@ -316,6 +364,14 @@ export function ProjecaoHeatmap({
                           className="p-0.5 w-[60px] h-8 bg-muted/10"
                         />
                       ))}
+
+                    {showPrevisto && (
+                      <td
+                        className="p-1 text-center text-[11px] rounded h-8 min-w-[60px] font-semibold bg-slate-500/20 text-slate-700"
+                      >
+                        {formatCurrency(totalPrevisto)}
+                      </td>
+                    )}
                   </React.Fragment>
                 );
               })}
@@ -330,7 +386,11 @@ export function ProjecaoHeatmap({
             "w-3 h-3 rounded",
             colorScheme === "expense" ? "bg-rose-500" : "bg-emerald-500"
           )}></div>
-          <span>{colorScheme === "expense" ? "Despesa" : "Receita"}</span>
+          <span>{colorScheme === "expense" ? "Realizado" : "Realizado"}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded bg-slate-400"></div>
+          <span>Previsto</span>
         </div>
       </div>
 
@@ -341,6 +401,14 @@ export function ProjecaoHeatmap({
         onSave={onEditItem}
         months={months}
         type={colorScheme === "expense" ? "despesa" : "receita"}
+      />
+
+      <ProjecaoSidePanel
+        open={sidePanelOpen}
+        onOpenChange={setSidePanelOpen}
+        item={sidePanelItem}
+        type={colorScheme === "expense" ? "despesa" : "receita"}
+        onUpdate={onEditItem}
       />
     </div>
   );
