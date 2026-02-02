@@ -1,7 +1,7 @@
 import { Sidebar } from "@/components/Sidebar";
 import { GitBranch, Briefcase, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { IndicadoresDash } from "@/components/dashboard/Indicadores";
+import { IndicadoresDash } from "@/components/dashboard/IndicadoresDash";
 import { RateCard } from "@/components/Indicadores/RateCard";
 import { Calendar, Search, ShoppingCart, Truck, Headphones } from "lucide-react";
 
