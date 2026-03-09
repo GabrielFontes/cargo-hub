@@ -26,8 +26,8 @@ function getCellStyle(value: number, maxValue: number, type: "expense" | "revenu
   const intensity = Math.min(value / maxValue, 1);
 
   if (type === "previsto") {
-    if (intensity > 0.5) return "bg-primary/20 text-primary";
-    return "bg-primary/8 text-primary/70";
+    if (intensity > 0.5) return "bg-amber-500/25 text-amber-700";
+    return "bg-amber-500/10 text-amber-600/70";
   } else if (type === "expense") {
     if (intensity > 0.6) return "bg-destructive/25 text-destructive";
     if (intensity > 0.3) return "bg-destructive/15 text-destructive/80";
