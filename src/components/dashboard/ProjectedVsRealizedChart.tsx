@@ -19,17 +19,17 @@ export function ProjectedVsRealizedChart({ data }: ProjectedVsRealizedChartProps
       
       <ResponsiveContainer width="100%" height={280}>
         <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
           <XAxis 
             dataKey="month" 
-            tick={{ fontSize: 11 }} 
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} 
             tickLine={false}
-            axisLine={{ className: "stroke-border" }}
+            axisLine={false}
           />
           <YAxis 
-            tick={{ fontSize: 11 }} 
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} 
             tickLine={false}
-            axisLine={{ className: "stroke-border" }}
+            axisLine={false}
             tickFormatter={(value) => `${(value / 1000)}K`}
           />
           <Tooltip 
@@ -37,7 +37,8 @@ export function ProjectedVsRealizedChart({ data }: ProjectedVsRealizedChartProps
               backgroundColor: "hsl(var(--card))",
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
-              fontSize: "12px"
+              fontSize: "12px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
             }}
             formatter={(value: number, name: string) => {
               const labels: Record<string, string> = {
@@ -62,38 +63,40 @@ export function ProjectedVsRealizedChart({ data }: ProjectedVsRealizedChartProps
             }}
           />
           
-          {/* Areas for predicted values (background) */}
+          {/* Step areas for predicted values */}
           <Area 
-            type="monotone" 
+            type="step" 
             dataKey="receitaPrevista" 
-            fill="hsl(142, 76%, 36%)" 
-            fillOpacity={0.15}
-            stroke="hsl(142, 76%, 36%)"
-            strokeWidth={1}
-            strokeDasharray="4 4"
+            fill="hsl(152, 57%, 58%)" 
+            fillOpacity={0.08}
+            stroke="hsl(152, 57%, 58%)"
+            strokeWidth={1.5}
+            strokeDasharray="6 3"
           />
           <Area 
-            type="monotone" 
+            type="step" 
             dataKey="despesaPrevista" 
-            fill="hsl(0, 84%, 60%)" 
-            fillOpacity={0.15}
-            stroke="hsl(0, 84%, 60%)"
-            strokeWidth={1}
-            strokeDasharray="4 4"
+            fill="hsl(4, 70%, 65%)" 
+            fillOpacity={0.08}
+            stroke="hsl(4, 70%, 65%)"
+            strokeWidth={1.5}
+            strokeDasharray="6 3"
           />
           
           {/* Bars for realized values */}
           <Bar 
             dataKey="receitaRealizada" 
-            fill="hsl(142, 76%, 36%)" 
-            radius={[4, 4, 0, 0]} 
-            barSize={16}
+            fill="hsl(152, 57%, 48%)" 
+            radius={[3, 3, 0, 0]} 
+            barSize={14}
+            opacity={0.85}
           />
           <Bar 
             dataKey="despesaRealizada" 
-            fill="hsl(0, 84%, 60%)" 
-            radius={[4, 4, 0, 0]} 
-            barSize={16}
+            fill="hsl(4, 70%, 58%)" 
+            radius={[3, 3, 0, 0]} 
+            barSize={14}
+            opacity={0.85}
           />
         </ComposedChart>
       </ResponsiveContainer>

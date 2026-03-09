@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FichaTecnicaItem } from "./types";
 
 interface FichaTecnicaTabProps {
@@ -32,7 +30,6 @@ export function FichaTecnicaTab({ items, onChange, readonly = false }: FichaTecn
     const updated = items.map(item => {
       if (item.id === id) {
         const newItem = { ...item, [field]: value };
-        // Recalcula custo total
         newItem.custoTotal = newItem.custo * newItem.qnt;
         return newItem;
       }
@@ -45,135 +42,107 @@ export function FichaTecnicaTab({ items, onChange, readonly = false }: FichaTecn
     onChange(items.filter(item => item.id !== id));
   };
 
+  const total = items.reduce((sum, item) => sum + item.custoTotal, 0);
+
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-primary text-primary-foreground">
-              <th className="p-2 text-left min-w-[150px]">Matéria-Prima</th>
-              <th className="p-2 text-center w-[70px]">Composto</th>
-              <th className="p-2 text-center w-[60px]">Fixo?</th>
-              <th className="p-2 text-center w-[80px]">Custo</th>
-              <th className="p-2 text-center w-[50px]">Un.</th>
-              <th className="p-2 text-center w-[70px]">Medida</th>
-              <th className="p-2 text-center w-[70px]">Qnt Real</th>
-              <th className="p-2 text-center w-[60px]">Qnt.</th>
-              <th className="p-2 text-center w-[80px] bg-amber-100 text-amber-900">Custo</th>
-              {!readonly && <th className="p-2 w-[40px]"></th>}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, idx) => (
-              <tr key={item.id} className="border-b border-border hover:bg-muted/30">
-                <td className="p-1">
-                  <Input
-                    value={item.materiaPrima}
-                    onChange={(e) => updateItem(item.id, "materiaPrima", e.target.value)}
-                    className="h-7 text-xs"
-                    disabled={readonly}
-                    placeholder="Nome..."
-                  />
-                </td>
-                <td className="p-1 text-center">
-                  <Checkbox
-                    checked={item.composto}
-                    onCheckedChange={(checked) => updateItem(item.id, "composto", checked)}
-                    disabled={readonly}
-                  />
-                </td>
-                <td className="p-1 text-center">
-                  <Checkbox
-                    checked={item.fixo}
-                    onCheckedChange={(checked) => updateItem(item.id, "fixo", checked)}
-                    disabled={readonly}
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    type="number"
-                    value={item.custo}
-                    onChange={(e) => updateItem(item.id, "custo", parseFloat(e.target.value) || 0)}
-                    className="h-7 text-xs text-center"
-                    disabled={readonly}
-                    step="0.01"
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    value={item.unidade}
-                    onChange={(e) => updateItem(item.id, "unidade", e.target.value)}
-                    className="h-7 text-xs text-center"
-                    disabled={readonly}
-                    placeholder="un"
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    value={item.medida}
-                    onChange={(e) => updateItem(item.id, "medida", e.target.value)}
-                    className="h-7 text-xs text-center"
-                    disabled={readonly}
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    type="number"
-                    value={item.qntReal}
-                    onChange={(e) => updateItem(item.id, "qntReal", parseFloat(e.target.value) || 0)}
-                    className="h-7 text-xs text-center"
-                    disabled={readonly}
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    type="number"
-                    value={item.qnt}
-                    onChange={(e) => updateItem(item.id, "qnt", parseFloat(e.target.value) || 0)}
-                    className="h-7 text-xs text-center"
-                    disabled={readonly}
-                  />
-                </td>
-                <td className="p-1 bg-amber-50">
-                  <div className="h-7 flex items-center justify-center text-xs font-medium text-amber-900">
-                    R$ {item.custoTotal.toFixed(2)}
-                  </div>
-                </td>
-                {!readonly && (
-                  <td className="p-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-3">
+      {items.length === 0 && !readonly && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">Nenhum insumo adicionado</p>
+          <p className="text-xs mt-1">Adicione matérias-primas para compor a ficha técnica</p>
+        </div>
+      )}
+
+      {items.map((item) => (
+        <div key={item.id} className="group relative grid grid-cols-12 gap-2 items-end p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
+          {/* Name - spans 4 cols */}
+          <div className="col-span-4 space-y-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Insumo</label>
+            <Input
+              value={item.materiaPrima}
+              onChange={(e) => updateItem(item.id, "materiaPrima", e.target.value)}
+              className="h-8 text-xs"
+              disabled={readonly}
+              placeholder="Nome do insumo"
+            />
+          </div>
+
+          {/* Unit cost */}
+          <div className="col-span-2 space-y-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Custo (R$)</label>
+            <Input
+              type="number"
+              value={item.custo || ""}
+              onChange={(e) => updateItem(item.id, "custo", parseFloat(e.target.value) || 0)}
+              className="h-8 text-xs"
+              disabled={readonly}
+              step="0.01"
+              placeholder="0,00"
+            />
+          </div>
+
+          {/* Quantity */}
+          <div className="col-span-2 space-y-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Qtd.</label>
+            <Input
+              type="number"
+              value={item.qnt || ""}
+              onChange={(e) => updateItem(item.id, "qnt", parseFloat(e.target.value) || 0)}
+              className="h-8 text-xs"
+              disabled={readonly}
+              placeholder="0"
+            />
+          </div>
+
+          {/* Unit */}
+          <div className="col-span-1 space-y-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Un.</label>
+            <Input
+              value={item.unidade}
+              onChange={(e) => updateItem(item.id, "unidade", e.target.value)}
+              className="h-8 text-xs text-center"
+              disabled={readonly}
+              placeholder="un"
+            />
+          </div>
+
+          {/* Total */}
+          <div className="col-span-2 space-y-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</label>
+            <div className="h-8 flex items-center text-xs font-medium text-foreground bg-muted/40 rounded-md px-2">
+              R$ {item.custoTotal.toFixed(2)}
+            </div>
+          </div>
+
+          {/* Remove */}
+          {!readonly && (
+            <div className="col-span-1 flex justify-end">
+              <button
+                onClick={() => removeItem(item.id)}
+                className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
 
       {!readonly && (
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={addRow}
-          className="w-full"
+          className="w-full h-9 border border-dashed border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors flex items-center justify-center gap-1.5"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Matéria-Prima
-        </Button>
+          <Plus className="h-3.5 w-3.5" />
+          Adicionar insumo
+        </button>
       )}
 
       {items.length > 0 && (
-        <div className="flex justify-end pt-2 border-t">
-          <div className="text-sm font-medium">
-            Total: <span className="text-primary">R$ {items.reduce((sum, item) => sum + item.custoTotal, 0).toFixed(2)}</span>
-          </div>
+        <div className="flex justify-end pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground">
+            Total: <span className="font-semibold text-foreground">R$ {total.toFixed(2)}</span>
+          </span>
         </div>
       )}
     </div>
