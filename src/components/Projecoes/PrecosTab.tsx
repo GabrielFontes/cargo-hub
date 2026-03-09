@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,156 +19,86 @@ interface PrecosTabProps {
 }
 
 export function PrecosTab({ items, onChange }: PrecosTabProps) {
-  const [newPreco, setNewPreco] = useState({
-    mes: 0,
-    ano: 2026,
-    valor: 0,
-    descricao: "",
-  });
+  const [newPreco, setNewPreco] = useState({ mes: 0, ano: 2026, valor: 0, descricao: "" });
 
   const addPreco = () => {
     if (newPreco.valor <= 0) return;
-
-    const item: PrecoItem = {
-      id: `preco-${Date.now()}`,
-      ...newPreco,
-    };
-
+    const item: PrecoItem = { id: `preco-${Date.now()}`, ...newPreco };
     onChange([...items, item]);
     setNewPreco({ mes: 0, ano: 2026, valor: 0, descricao: "" });
   };
 
-  const removePreco = (id: string) => {
-    onChange(items.filter(item => item.id !== id));
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") addPreco();
   };
 
-  const sortedItems = [...items].sort((a, b) => {
-    if (a.ano !== b.ano) return b.ano - a.ano;
-    return b.mes - a.mes;
-  });
+  const sortedItems = [...items].sort((a, b) => a.ano !== b.ano ? b.ano - a.ano : b.mes - a.mes);
 
   return (
     <div className="space-y-4">
-      {/* Add new price form */}
-      <div className="bg-muted/30 p-4 rounded-lg space-y-3">
-        <h4 className="text-sm font-medium">Lançar Novo Preço</h4>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Mês</Label>
-            <Select
-              value={newPreco.mes.toString()}
-              onValueChange={(v) => setNewPreco(prev => ({ ...prev, mes: parseInt(v) }))}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MONTHS.map((month, idx) => (
-                  <SelectItem key={idx} value={idx.toString()}>
-                    {month}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs">Ano</Label>
-            <Select
-              value={newPreco.ano.toString()}
-              onValueChange={(v) => setNewPreco(prev => ({ ...prev, ano: parseInt(v) }))}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {YEARS.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Inline add row */}
+      <div className="flex items-end gap-2">
+        <div className="space-y-1 w-20">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Mês</label>
+          <Select value={newPreco.mes.toString()} onValueChange={(v) => setNewPreco(p => ({ ...p, mes: parseInt(v) }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m, i) => <SelectItem key={i} value={i.toString()}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-
-        <div className="space-y-1">
-          <Label className="text-xs">Valor (R$)</Label>
+        <div className="space-y-1 w-20">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Ano</label>
+          <Select value={newPreco.ano.toString()} onValueChange={(v) => setNewPreco(p => ({ ...p, ano: parseInt(v) }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {YEARS.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1 flex-1">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Valor (R$)</label>
           <Input
             type="number"
-            value={newPreco.valor}
-            onChange={(e) => setNewPreco(prev => ({ ...prev, valor: parseFloat(e.target.value) || 0 }))}
+            value={newPreco.valor || ""}
+            onChange={(e) => setNewPreco(p => ({ ...p, valor: parseFloat(e.target.value) || 0 }))}
+            onKeyDown={handleKeyDown}
             className="h-8 text-xs"
             step="0.01"
             placeholder="0,00"
           />
         </div>
-
-        <div className="space-y-1">
-          <Label className="text-xs">Descrição (opcional)</Label>
-          <Input
-            value={newPreco.descricao}
-            onChange={(e) => setNewPreco(prev => ({ ...prev, descricao: e.target.value }))}
-            className="h-8 text-xs"
-            placeholder="Descrição do lançamento..."
-          />
-        </div>
-
-        <Button
+        <button
           onClick={addPreco}
           disabled={newPreco.valor <= 0}
-          className="w-full"
-          size="sm"
+          className="h-8 w-8 shrink-0 flex items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Lançar Preço
-        </Button>
+          <Plus className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      {/* Price list */}
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Histórico de Preços</h4>
-        
-        {sortedItems.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-4 text-center">
-            Nenhum preço lançado ainda.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {sortedItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-background border rounded-md"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {MONTHS[item.mes]} {item.ano}
-                    </span>
-                    <span className="text-sm font-semibold text-primary">
-                      R$ {item.valor.toFixed(2)}
-                    </span>
-                  </div>
-                  {item.descricao && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {item.descricao}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive"
-                  onClick={() => removePreco(item.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+      {/* List */}
+      {sortedItems.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-6 text-center">Nenhum preço lançado</p>
+      ) : (
+        <div className="space-y-1">
+          {sortedItems.map((item) => (
+            <div key={item.id} className="group flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-16">{MONTHS[item.mes]} {item.ano}</span>
+                <span className="text-xs font-medium">R$ {item.valor.toFixed(2)}</span>
+                {item.descricao && <span className="text-[10px] text-muted-foreground">· {item.descricao}</span>}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <button
+                onClick={() => onChange(items.filter(i => i.id !== item.id))}
+                className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

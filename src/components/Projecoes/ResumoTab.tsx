@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ResumoReceita } from "./types";
 
 interface ResumoTabProps {
@@ -7,137 +6,109 @@ interface ResumoTabProps {
   onChange: (resumo: ResumoReceita) => void;
 }
 
+function Row({ label, children, highlight }: { label: string; children: React.ReactNode; highlight?: "green" | "amber" }) {
+  return (
+    <div className={`flex items-center justify-between py-2.5 px-3 rounded-md ${
+      highlight === "green" ? "bg-emerald-500/5" : 
+      highlight === "amber" ? "bg-amber-500/5" : ""
+    }`}>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
 export function ResumoTab({ resumo, onChange }: ResumoTabProps) {
   const updateField = (field: keyof ResumoReceita, value: number) => {
     const newResumo = { ...resumo, [field]: value };
     
-    // Recalcula valores automáticos
+    if (field === "impostoPercentual") {
+      newResumo.impostoValor = (newResumo.precoVendaUnidade * value) / 100;
+    }
+    
     const custoTotal = newResumo.custoTotalUnitario + newResumo.custoVariavel + newResumo.impostoValor + newResumo.custoAquisicao;
     const margemValor = newResumo.precoVendaUnidade - custoTotal;
-    const margemPercent = newResumo.precoVendaUnidade > 0 
-      ? (margemValor / newResumo.precoVendaUnidade) * 100 
-      : 0;
+    const margemPercent = newResumo.precoVendaUnidade > 0 ? (margemValor / newResumo.precoVendaUnidade) * 100 : 0;
     
     newResumo.margemContribuicaoValor = margemValor;
     newResumo.margemContribuicaoPercent = margemPercent;
     newResumo.lucroMedioValor = margemValor;
     newResumo.lucroMedioPercent = margemPercent;
     
-    // Calcula imposto a partir do percentual
-    if (field === "impostoPercentual") {
-      newResumo.impostoValor = (newResumo.precoVendaUnidade * value) / 100;
-    }
-    
     onChange(newResumo);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-primary text-primary-foreground p-3 rounded-t-lg text-center font-semibold">
-        RESUMO
-      </div>
+    <div className="space-y-1">
+      <Row label="Preço de venda (un.)">
+        <span className="text-[10px] text-muted-foreground">R$</span>
+        <Input
+          type="number"
+          value={resumo.precoVendaUnidade}
+          onChange={(e) => updateField("precoVendaUnidade", parseFloat(e.target.value) || 0)}
+          className="h-7 w-24 text-right text-xs font-medium border-0 bg-muted/30 shadow-none"
+          step="0.01"
+        />
+      </Row>
 
-      <div className="space-y-3">
-        {/* Preço de venda */}
-        <div className="flex items-center justify-between py-2 border-b">
-          <Label className="text-sm">Preço de venda por unidade</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-muted-foreground">R$</span>
-            <Input
-              type="number"
-              value={resumo.precoVendaUnidade}
-              onChange={(e) => updateField("precoVendaUnidade", parseFloat(e.target.value) || 0)}
-              className="h-7 w-24 text-right text-sm font-semibold"
-              step="0.01"
-            />
-          </div>
-        </div>
+      <Row label="Custo unitário (produto)">
+        <span className="text-[10px] text-muted-foreground">R$</span>
+        <Input
+          type="number"
+          value={resumo.custoTotalUnitario}
+          onChange={(e) => updateField("custoTotalUnitario", parseFloat(e.target.value) || 0)}
+          className="h-7 w-24 text-right text-xs border-0 bg-muted/30 shadow-none"
+          step="0.01"
+        />
+      </Row>
 
-        {/* Custo total unitário */}
-        <div className="flex items-center justify-between py-2 border-b bg-muted/30 px-2 rounded">
-          <Label className="text-sm text-muted-foreground">Custo total unitário (Produto)</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-muted-foreground">R$</span>
-            <Input
-              type="number"
-              value={resumo.custoTotalUnitario}
-              onChange={(e) => updateField("custoTotalUnitario", parseFloat(e.target.value) || 0)}
-              className="h-7 w-24 text-right text-sm"
-              step="0.01"
-            />
-          </div>
-        </div>
+      <Row label="(-) Custo variável">
+        <span className="text-[10px] text-muted-foreground">R$</span>
+        <Input
+          type="number"
+          value={resumo.custoVariavel}
+          onChange={(e) => updateField("custoVariavel", parseFloat(e.target.value) || 0)}
+          className="h-7 w-24 text-right text-xs border-0 bg-muted/30 shadow-none"
+          step="0.01"
+        />
+      </Row>
 
-        {/* Custo variável */}
-        <div className="flex items-center justify-between py-2 border-b">
-          <Label className="text-sm">(-) Custo VARIÁVEL por mercadoria</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-muted-foreground">R$</span>
-            <Input
-              type="number"
-              value={resumo.custoVariavel}
-              onChange={(e) => updateField("custoVariavel", parseFloat(e.target.value) || 0)}
-              className="h-7 w-24 text-right text-sm"
-              step="0.01"
-            />
-          </div>
+      <Row label="(-) Imposto">
+        <div className="flex items-center gap-1.5 bg-muted/30 rounded-md px-2 h-7">
+          <Input
+            type="number"
+            value={resumo.impostoPercentual}
+            onChange={(e) => updateField("impostoPercentual", parseFloat(e.target.value) || 0)}
+            className="h-5 w-10 text-right text-[10px] border-0 bg-transparent shadow-none p-0"
+            step="0.01"
+          />
+          <span className="text-[10px] text-muted-foreground">%</span>
         </div>
+        <span className="text-xs text-muted-foreground">R$ {resumo.impostoValor.toFixed(2)}</span>
+      </Row>
 
-        {/* Imposto */}
-        <div className="flex items-center justify-between py-2 border-b">
-          <Label className="text-sm">(-) Imposto</Label>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-emerald-100 px-2 py-1 rounded">
-              <Input
-                type="number"
-                value={resumo.impostoPercentual}
-                onChange={(e) => updateField("impostoPercentual", parseFloat(e.target.value) || 0)}
-                className="h-5 w-12 text-right text-xs border-0 bg-transparent p-0"
-                step="0.01"
-              />
-              <span className="text-xs">%</span>
-            </div>
-            <span className="text-sm">R$ {resumo.impostoValor.toFixed(2)}</span>
-          </div>
-        </div>
+      <Row label="(-) Custo aquisição">
+        <span className="text-[10px] text-muted-foreground">R$</span>
+        <Input
+          type="number"
+          value={resumo.custoAquisicao}
+          onChange={(e) => updateField("custoAquisicao", parseFloat(e.target.value) || 0)}
+          className="h-7 w-24 text-right text-xs border-0 bg-muted/30 shadow-none"
+          step="0.01"
+        />
+      </Row>
 
-        {/* Custo de aquisição */}
-        <div className="flex items-center justify-between py-2 border-b">
-          <Label className="text-sm">(-) Custo de Aquisição de cliente</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-muted-foreground">R$</span>
-            <Input
-              type="number"
-              value={resumo.custoAquisicao}
-              onChange={(e) => updateField("custoAquisicao", parseFloat(e.target.value) || 0)}
-              className="h-7 w-24 text-right text-sm"
-              step="0.01"
-            />
-          </div>
-        </div>
+      <div className="border-t border-border my-2" />
 
-        {/* Margem de contribuição */}
-        <div className="flex items-center justify-between py-2 border-b bg-emerald-50 px-2 rounded">
-          <Label className="text-sm font-medium">Margem de Contribuição</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm bg-emerald-100 px-2 py-1 rounded">
-              {resumo.margemContribuicaoPercent.toFixed(2)}%
-            </span>
-            <span className="text-sm font-semibold">R$ {resumo.margemContribuicaoValor.toFixed(2)}</span>
-          </div>
-        </div>
+      <Row label="Margem de contribuição" highlight="green">
+        <span className="text-xs font-medium text-emerald-600">{resumo.margemContribuicaoPercent.toFixed(1)}%</span>
+        <span className="text-xs font-semibold">R$ {resumo.margemContribuicaoValor.toFixed(2)}</span>
+      </Row>
 
-        {/* Lucro médio */}
-        <div className="flex items-center justify-between py-2 bg-amber-50 px-2 rounded">
-          <Label className="text-sm font-medium">Lucro médio por venda</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm bg-amber-100 px-2 py-1 rounded">
-              {resumo.lucroMedioPercent.toFixed(2)}%
-            </span>
-            <span className="text-sm font-semibold">R$ {resumo.lucroMedioValor.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
+      <Row label="Lucro médio por venda" highlight="amber">
+        <span className="text-xs font-medium text-amber-600">{resumo.lucroMedioPercent.toFixed(1)}%</span>
+        <span className="text-xs font-semibold">R$ {resumo.lucroMedioValor.toFixed(2)}</span>
+      </Row>
     </div>
   );
 }
