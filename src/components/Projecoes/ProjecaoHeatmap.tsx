@@ -22,19 +22,20 @@ const YEARS = [2023, 2024, 2025, 2026];
 const CURRENT_YEAR = 2026;
 
 function getCellStyle(value: number, maxValue: number, type: "expense" | "revenue" | "previsto"): string {
-  if (value === 0) return "bg-muted/30 text-muted-foreground/50";
+  if (value === 0) return "bg-muted text-muted-foreground";
   const intensity = Math.min(value / maxValue, 1);
 
   if (type === "previsto") {
-    return intensity > 0.5 ? "bg-primary/15 text-primary" : "bg-primary/8 text-primary/80";
+    if (intensity > 0.5) return "bg-primary/20 text-primary";
+    return "bg-primary/8 text-primary/70";
   } else if (type === "expense") {
-    if (intensity > 0.6) return "bg-destructive/20 text-destructive";
-    if (intensity > 0.3) return "bg-destructive/12 text-destructive/80";
-    return "bg-destructive/6 text-destructive/60";
+    if (intensity > 0.6) return "bg-destructive/25 text-destructive";
+    if (intensity > 0.3) return "bg-destructive/15 text-destructive/80";
+    return "bg-destructive/8 text-destructive/60";
   } else {
-    if (intensity > 0.6) return "bg-emerald-500/20 text-emerald-700";
-    if (intensity > 0.3) return "bg-emerald-500/12 text-emerald-600/80";
-    return "bg-emerald-500/6 text-emerald-600/60";
+    if (intensity > 0.6) return "bg-emerald-500/25 text-emerald-700";
+    if (intensity > 0.3) return "bg-emerald-500/15 text-emerald-600/80";
+    return "bg-emerald-500/8 text-emerald-600/60";
   }
 }
 
