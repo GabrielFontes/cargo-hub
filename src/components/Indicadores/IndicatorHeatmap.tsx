@@ -166,49 +166,40 @@ export function IndicatorHeatmap({ title, indicators: initialIndicators, months,
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
+    <div className="bg-card border border-border rounded-xl">
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground mr-auto">{title}</h3>
 
-      {/* Search bar */}
-      <div className="relative mb-4">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-4 w-4 text-muted-foreground" />
+        {/* Year multi-select */}
+        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5">
+          {YEARS.map(year => (
+            <button
+              key={year}
+              onClick={() => toggleYear(year)}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded transition-colors",
+                selectedYears.includes(year)
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {year}
+            </button>
+          ))}
         </div>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar indicador..."
-          className="w-full pl-10 pr-4 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-        />
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm("")}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
-          >
-            ×
-          </button>
-        )}
-      </div>
 
-      {/* Year tabs */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {YEARS.map(year => (
-          <button
-            key={year}
-            onClick={() => toggleYear(year)}
-            disabled={year === CURRENT_YEAR}
-            className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-md border transition-colors",
-              selectedYears.includes(year)
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-muted text-muted-foreground hover:bg-muted/80 border-border",
-              year === CURRENT_YEAR && "opacity-80 cursor-default"
-            )}
-          >
-            {year}
-          </button>
-        ))}
+        {/* Search */}
+        <div className="relative w-40">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto">
