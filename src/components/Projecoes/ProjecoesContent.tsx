@@ -101,10 +101,6 @@ const initialReceitas: ProjecaoItem[] = [
     valores2025: [24000, 25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 35000],
     valores2026: [27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 0, 0, 0, 0],
     previsto: [30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000],
-    sazonalidade: {
-      notas: [1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2],
-      percentuais: [5.26, 5.26, 10.53, 10.53, 10.53, 10.53, 10.53, 10.53, 5.26, 5.26, 10.53, 10.53],
-    },
   },
   {
     id: "rec-3",
@@ -116,10 +112,6 @@ const initialReceitas: ProjecaoItem[] = [
     valores2025: [16000, 16500, 17000, 17500, 18000, 18500, 19000, 19500, 20000, 20500, 21000, 21500],
     valores2026: [18000, 18500, 19000, 19500, 20000, 20500, 21000, 21500, 0, 0, 0, 0],
     previsto: [20000, 20500, 21000, 21500, 22000, 22500, 23000, 23500, 24000, 24500, 25000, 25500],
-    sazonalidade: {
-      notas: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-      percentuais: [8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33, 8.33],
-    },
   },
   {
     id: "rec-4",
@@ -131,10 +123,6 @@ const initialReceitas: ProjecaoItem[] = [
     valores2025: [8000, 9000, 8500, 10000, 9500, 11000, 10500, 11500, 12000, 11000, 12500, 13000],
     valores2026: [9000, 10000, 9500, 11000, 10500, 12000, 11500, 12500, 0, 0, 0, 0],
     previsto: [10000, 11000, 10500, 12000, 11500, 13000, 12500, 13500, 14000, 13000, 14500, 15000],
-    sazonalidade: {
-      notas: [1, 2, 1, 2, 2, 3, 2, 3, 3, 2, 3, 3],
-      percentuais: [3.7, 7.41, 3.7, 7.41, 7.41, 11.11, 7.41, 11.11, 11.11, 7.41, 11.11, 11.11],
-    },
   },
 ];
 
@@ -142,41 +130,31 @@ export function ProjecoesContent() {
   const [despesas, setDespesas] = useState<ProjecaoItem[]>(initialDespesas);
   const [receitas, setReceitas] = useState<ProjecaoItem[]>(initialReceitas);
 
-  const handleAddDespesa = (item: ProjecaoItem) => {
-    setDespesas(prev => [...prev, item]);
-  };
-
+  const handleAddDespesa = (item: ProjecaoItem) => setDespesas(prev => [...prev, item]);
   const handleEditDespesa = (updatedItem: ProjecaoItem) => {
-    setDespesas(prev => prev.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
+    setDespesas(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
   };
-
-  const handleAddReceita = (item: ProjecaoItem) => {
-    setReceitas(prev => [...prev, item]);
-  };
-
+  const handleAddReceita = (item: ProjecaoItem) => setReceitas(prev => [...prev, item]);
   const handleEditReceita = (updatedItem: ProjecaoItem) => {
-    setReceitas(prev => prev.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
+    setReceitas(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
   };
+
+  // Despesas as selectable options for ficha técnica
+  const despesaOptions = despesas.map(d => ({ id: d.id, name: d.name }));
 
   return (
     <main className="flex-1 bg-background overflow-y-auto scrollbar-thin">
       <div className="p-8">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">Projeções</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie previsões e acompanhe valores realizados de receitas e despesas
+            Receitas e despesas — previsto vs realizado
           </p>
         </div>
 
-        {/* Tabs */}
         <Tabs defaultValue="despesas" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="despesas" className="data-[state=active]:bg-rose-500/10 data-[state=active]:text-rose-700">
+            <TabsTrigger value="despesas" className="data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
               Despesas
             </TabsTrigger>
             <TabsTrigger value="receitas" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700">
@@ -203,6 +181,7 @@ export function ProjecoesContent() {
               onAddItem={handleAddReceita}
               onEditItem={handleEditReceita}
               colorScheme="revenue"
+              despesas={despesaOptions}
             />
           </TabsContent>
         </Tabs>
