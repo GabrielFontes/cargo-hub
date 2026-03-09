@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProjecaoItem } from "./types";
+import { ProjecaoItem, FichaTecnicaItem, ResumoReceita } from "./types";
+import { FichaTecnicaTab } from "./FichaTecnicaTab";
+import { ResumoTab } from "./ResumoTab";
+import { PrecosTab } from "./PrecosTab";
+import { Plus, Trash2 } from "lucide-react";
 
 interface ProjecaoEditDialogProps {
   open: boolean;
@@ -43,13 +48,26 @@ export function ProjecaoEditDialog({
   const [name, setName] = useState("");
   const [conta, setConta] = useState("");
   const [hasFichaTecnica, setHasFichaTecnica] = useState(false);
-  const [isPrevisto, setIsPrevisto] = useState(true); // true = previsto, false = realizado
+  const [isPrevisto, setIsPrevisto] = useState(true);
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [previsto, setPrevisto] = useState<number[]>(Array(12).fill(0));
   const [valores, setValores] = useState<number[]>(Array(12).fill(0));
   const [sazonalidade, setSazonalidade] = useState<{ notas: number[], percentuais: number[] }>({
     notas: Array(12).fill(1),
     percentuais: Array(12).fill(0),
+  });
+  const [fichaTecnica, setFichaTecnica] = useState<FichaTecnicaItem[]>([]);
+  const [resumo, setResumo] = useState<ResumoReceita>({
+    precoVendaUnidade: 0,
+    custoTotalUnitario: 0,
+    custoVariavel: 0,
+    impostoPercentual: 6,
+    impostoValor: 0,
+    custoAquisicao: 0,
+    margemContribuicaoPercent: 0,
+    margemContribuicaoValor: 0,
+    lucroMedioPercent: 0,
+    lucroMedioValor: 0,
   });
 
   useEffect(() => {
@@ -58,8 +76,8 @@ export function ProjecaoEditDialog({
       setConta(item.conta || "");
       setHasFichaTecnica(item.hasFichaTecnica);
       setPrevisto([...(item.previsto || Array(12).fill(0))]);
+      setFichaTecnica(item.fichaTecnica || []);
       
-      // Load values based on selected year
       const key = `valores${selectedYear}` as keyof ProjecaoItem;
       setValores([...((item[key] as number[]) || Array(12).fill(0))]);
       
@@ -70,6 +88,10 @@ export function ProjecaoEditDialog({
           notas: Array(12).fill(1),
           percentuais: Array(12).fill(0),
         });
+      }
+
+      if (item.resumo) {
+        setResumo({ ...item.resumo });
       }
     } else {
       resetForm();
@@ -88,6 +110,19 @@ export function ProjecaoEditDialog({
       notas: Array(12).fill(1),
       percentuais: Array(12).fill(0),
     });
+    setFichaTecnica([]);
+    setResumo({
+      precoVendaUnidade: 0,
+      custoTotalUnitario: 0,
+      custoVariavel: 0,
+      impostoPercentual: 6,
+      impostoValor: 0,
+      custoAquisicao: 0,
+      margemContribuicaoPercent: 0,
+      margemContribuicaoValor: 0,
+      lucroMedioPercent: 0,
+      lucroMedioValor: 0,
+    });
   };
 
   const handleSave = () => {
@@ -100,9 +135,10 @@ export function ProjecaoEditDialog({
       hasFichaTecnica,
       previsto,
       sazonalidade: type === "receita" ? sazonalidade : undefined,
+      fichaTecnica: hasFichaTecnica ? fichaTecnica : undefined,
+      resumo: type === "receita" ? resumo : undefined,
     };
 
-    // Update valores for selected year if in realizado mode
     if (!isPrevisto) {
       const key = `valores${selectedYear}` as keyof ProjecaoItem;
       (updatedItem as any)[key] = valores;
@@ -129,7 +165,6 @@ export function ProjecaoEditDialog({
     const newNotas = [...sazonalidade.notas];
     newNotas[index] = nota;
     
-    // Recalculate percentages
     const total = newNotas.reduce((sum, n) => sum + n, 0);
     const newPercentuais = newNotas.map(n => total > 0 ? (n / total) * 100 : 0);
     
@@ -138,148 +173,198 @@ export function ProjecaoEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${type === "despesa" ? "bg-rose-500" : "bg-emerald-500"}`} />
             Editar {type === "despesa" ? "Despesa" : "Receita"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Basic fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={`Nome da ${type}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="conta">Conta (Plano de Contas)</Label>
-              <Input
-                id="conta"
-                value={conta}
-                onChange={(e) => setConta(e.target.value)}
-                placeholder="Ex: 3.1.01.001"
-              />
-            </div>
-          </div>
-
-          {/* Checkbox for ficha técnica */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="fichaTecnica"
-              checked={hasFichaTecnica}
-              onCheckedChange={(checked) => setHasFichaTecnica(checked as boolean)}
-            />
-            <Label htmlFor="fichaTecnica" className="text-sm">
-              Possui Ficha Técnica
-            </Label>
-          </div>
-
-          {/* Toggle Previsto / Realizado */}
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <Label className="text-sm font-medium">Modo de Edição:</Label>
-              <div className="flex items-center space-x-2">
-                <span className={`text-sm ${isPrevisto ? "text-primary font-medium" : "text-muted-foreground"}`}>
-                  Previsto
-                </span>
-                <Switch
-                  checked={!isPrevisto}
-                  onCheckedChange={(checked) => setIsPrevisto(!checked)}
-                />
-                <span className={`text-sm ${!isPrevisto ? "text-primary font-medium" : "text-muted-foreground"}`}>
-                  Realizado
-                </span>
-              </div>
-            </div>
-
-            {!isPrevisto && (
-              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map(year => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <Tabs defaultValue="geral" className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="flex-shrink-0 w-full justify-start">
+            <TabsTrigger value="geral">Geral</TabsTrigger>
+            <TabsTrigger value="valores">Valores</TabsTrigger>
+            {type === "receita" && (
+              <TabsTrigger value="sazonalidade">Sazonalidade</TabsTrigger>
             )}
-          </div>
+            {hasFichaTecnica && (
+              <TabsTrigger value="fichaTecnica">Ficha Técnica</TabsTrigger>
+            )}
+            {type === "receita" && (
+              <TabsTrigger value="resumo">Resumo</TabsTrigger>
+            )}
+            {type === "despesa" && (
+              <TabsTrigger value="precos">Preços</TabsTrigger>
+            )}
+          </TabsList>
 
-          {/* Monthly values */}
-          <div className="space-y-2">
-            <Label>
-              {isPrevisto 
-                ? `Valores Previstos (${CURRENT_YEAR})` 
-                : `Valores Realizados (${selectedYear})`
-              }
-              {type === "despesa" && !isPrevisto && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  (Preços são lançados no painel lateral)
-                </span>
-              )}
-            </Label>
-            <div className="grid grid-cols-4 gap-2">
-              {months.map((month, idx) => (
-                <div key={month} className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{month}</Label>
+          <div className="flex-1 overflow-y-auto py-4">
+            {/* Tab: Geral */}
+            <TabsContent value="geral" className="mt-0 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome</Label>
                   <Input
-                    type="number"
-                    value={isPrevisto ? previsto[idx] : valores[idx]}
-                    onChange={(e) => isPrevisto 
-                      ? updatePrevisto(idx, e.target.value)
-                      : updateValor(idx, e.target.value)
-                    }
-                    className="h-8"
-                    step="0.01"
-                    disabled={type === "despesa" && !isPrevisto}
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={`Nome da ${type}`}
                   />
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Sazonalidade (only for receitas) */}
-          {type === "receita" && (
-            <div className="space-y-2">
-              <Label>Sazonalidade</Label>
-              <p className="text-xs text-muted-foreground">
-                Defina uma nota de 1 a 3 para cada mês. O percentual é calculado automaticamente.
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {months.map((month, idx) => (
-                  <div key={month} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">{month}</Label>
-                    <div className="flex gap-1">
+                <div className="space-y-2">
+                  <Label htmlFor="conta">Conta (Plano de Contas)</Label>
+                  <Input
+                    id="conta"
+                    value={conta}
+                    onChange={(e) => setConta(e.target.value)}
+                    placeholder="Ex: 3.1.01.001"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
+                <Checkbox
+                  id="fichaTecnica"
+                  checked={hasFichaTecnica}
+                  onCheckedChange={(checked) => setHasFichaTecnica(checked as boolean)}
+                />
+                <Label htmlFor="fichaTecnica" className="text-sm cursor-pointer">
+                  Possui Ficha Técnica
+                </Label>
+              </div>
+            </TabsContent>
+
+            {/* Tab: Valores */}
+            <TabsContent value="valores" className="mt-0 space-y-4">
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Label className="text-sm font-medium">Modo:</Label>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-sm ${isPrevisto ? "text-primary font-medium" : "text-muted-foreground"}`}>
+                      Previsto
+                    </span>
+                    <Switch
+                      checked={!isPrevisto}
+                      onCheckedChange={(checked) => setIsPrevisto(!checked)}
+                    />
+                    <span className={`text-sm ${!isPrevisto ? "text-primary font-medium" : "text-muted-foreground"}`}>
+                      Realizado
+                    </span>
+                  </div>
+                </div>
+
+                {!isPrevisto && (
+                  <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEARS.map(year => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {isPrevisto 
+                    ? `Valores Previstos (${CURRENT_YEAR})` 
+                    : `Valores Realizados (${selectedYear})`
+                  }
+                </Label>
+                <div className="grid grid-cols-4 gap-3">
+                  {months.map((month, idx) => (
+                    <div key={month} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{month}</Label>
                       <Input
                         type="number"
-                        min={1}
-                        max={3}
-                        value={sazonalidade.notas[idx]}
-                        onChange={(e) => updateSazonalidadeNota(idx, e.target.value)}
-                        className="h-8 w-14"
+                        value={isPrevisto ? previsto[idx] : valores[idx]}
+                        onChange={(e) => isPrevisto 
+                          ? updatePrevisto(idx, e.target.value)
+                          : updateValor(idx, e.target.value)
+                        }
+                        className="h-9"
+                        step="0.01"
                       />
-                      <div className="h-8 flex-1 flex items-center justify-center bg-muted rounded text-xs font-medium">
-                        {sazonalidade.percentuais[idx].toFixed(1)}%
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Tab: Sazonalidade (only for receitas) */}
+            {type === "receita" && (
+              <TabsContent value="sazonalidade" className="mt-0 space-y-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Defina uma nota de 1 a 3 para cada mês. O percentual é calculado automaticamente.
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {months.map((month, idx) => (
+                    <div key={month} className="space-y-1.5 p-3 bg-muted/20 rounded-lg">
+                      <Label className="text-xs font-medium">{month}</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={3}
+                          value={sazonalidade.notas[idx]}
+                          onChange={(e) => updateSazonalidadeNota(idx, e.target.value)}
+                          className="h-8 w-16 text-center"
+                        />
+                        <div className="h-8 flex-1 flex items-center justify-center bg-primary/10 text-primary rounded text-xs font-semibold">
+                          {sazonalidade.percentuais[idx].toFixed(1)}%
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
 
-        <DialogFooter>
+            {/* Tab: Ficha Técnica */}
+            {hasFichaTecnica && (
+              <TabsContent value="fichaTecnica" className="mt-0">
+                <FichaTecnicaTab
+                  items={fichaTecnica}
+                  onChange={setFichaTecnica}
+                  readonly={false}
+                />
+              </TabsContent>
+            )}
+
+            {/* Tab: Resumo (only for receitas) */}
+            {type === "receita" && (
+              <TabsContent value="resumo" className="mt-0">
+                <ResumoTab
+                  resumo={resumo}
+                  onChange={setResumo}
+                />
+              </TabsContent>
+            )}
+
+            {/* Tab: Preços (only for despesas) */}
+            {type === "despesa" && (
+              <TabsContent value="precos" className="mt-0">
+                <PrecosTab
+                  items={item?.precos || []}
+                  onChange={(precos) => {
+                    if (item) {
+                      onSave({ ...item, precos });
+                    }
+                  }}
+                />
+              </TabsContent>
+            )}
+          </div>
+        </Tabs>
+
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

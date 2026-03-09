@@ -1,15 +1,7 @@
 import { useState } from "react";
-import { Calendar } from "lucide-react";
 import { ProjecaoHeatmap } from "./ProjecaoHeatmap";
 import { ProjecaoItem } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -147,7 +139,6 @@ const initialReceitas: ProjecaoItem[] = [
 ];
 
 export function ProjecoesContent() {
-  const [selectedMonth, setSelectedMonth] = useState("janeiro");
   const [despesas, setDespesas] = useState<ProjecaoItem[]>(initialDespesas);
   const [receitas, setReceitas] = useState<ProjecaoItem[]>(initialReceitas);
 
@@ -175,37 +166,22 @@ export function ProjecoesContent() {
     <main className="flex-1 bg-background overflow-y-auto scrollbar-thin">
       <div className="p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">Projeções</h1>
-          <div className="flex items-center gap-3">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[160px]">
-                <Calendar className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Mês" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="janeiro">Janeiro 2026</SelectItem>
-                <SelectItem value="fevereiro">Fevereiro 2026</SelectItem>
-                <SelectItem value="março">Março 2026</SelectItem>
-                <SelectItem value="abril">Abril 2026</SelectItem>
-                <SelectItem value="maio">Maio 2026</SelectItem>
-                <SelectItem value="junho">Junho 2026</SelectItem>
-                <SelectItem value="julho">Julho 2026</SelectItem>
-                <SelectItem value="agosto">Agosto 2026</SelectItem>
-                <SelectItem value="setembro">Setembro 2026</SelectItem>
-                <SelectItem value="outubro">Outubro 2026</SelectItem>
-                <SelectItem value="novembro">Novembro 2026</SelectItem>
-                <SelectItem value="dezembro">Dezembro 2026</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie previsões e acompanhe valores realizados de receitas e despesas
+          </p>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="despesas" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="despesas">Despesas</TabsTrigger>
-            <TabsTrigger value="receitas">Receitas</TabsTrigger>
+            <TabsTrigger value="despesas" className="data-[state=active]:bg-rose-500/10 data-[state=active]:text-rose-700">
+              Despesas
+            </TabsTrigger>
+            <TabsTrigger value="receitas" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700">
+              Receitas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="despesas">

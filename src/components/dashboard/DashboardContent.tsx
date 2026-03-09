@@ -4,7 +4,6 @@ import { FinancialCard } from "./FinancialCard";
 import { Heatmap } from "./Heatmap";
 import { ProjectedVsRealizedChart } from "./ProjectedVsRealizedChart";
 import { AnnualSummary } from "./AnnualSummary";
-import { IndicatorCard } from "./IndicatorCard";
 import {
   Select,
   SelectContent,
@@ -29,18 +28,18 @@ const expenseHeatmapData = [
 ];
 
 const chartData = [
-  { month: "Jan", projetado: 50000, realizado: 45000 },
-  { month: "Fev", projetado: 55000, realizado: 58000 },
-  { month: "Mar", projetado: 60000, realizado: 52000 },
-  { month: "Abr", projetado: 65000, realizado: 68000 },
-  { month: "Mai", projetado: 70000, realizado: 65000 },
-  { month: "Jun", projetado: 75000, realizado: 72000 },
-  { month: "Jul", projetado: 80000, realizado: 85000 },
-  { month: "Ago", projetado: 85000, realizado: 78000 },
-  { month: "Set", projetado: 0, realizado: 0 },
-  { month: "Out", projetado: 0, realizado: 0 },
-  { month: "Nov", projetado: 0, realizado: 0 },
-  { month: "Dez", projetado: 0, realizado: 0 },
+  { month: "Jan", receitaRealizada: 85000, despesaRealizada: 45000, receitaPrevista: 90000, despesaPrevista: 50000 },
+  { month: "Fev", receitaRealizada: 92000, despesaRealizada: 48000, receitaPrevista: 95000, despesaPrevista: 52000 },
+  { month: "Mar", receitaRealizada: 78000, despesaRealizada: 52000, receitaPrevista: 85000, despesaPrevista: 55000 },
+  { month: "Abr", receitaRealizada: 105000, despesaRealizada: 58000, receitaPrevista: 100000, despesaPrevista: 58000 },
+  { month: "Mai", receitaRealizada: 98000, despesaRealizada: 62000, receitaPrevista: 105000, despesaPrevista: 60000 },
+  { month: "Jun", receitaRealizada: 115000, despesaRealizada: 65000, receitaPrevista: 110000, despesaPrevista: 62000 },
+  { month: "Jul", receitaRealizada: 125000, despesaRealizada: 70000, receitaPrevista: 120000, despesaPrevista: 68000 },
+  { month: "Ago", receitaRealizada: 118000, despesaRealizada: 68000, receitaPrevista: 125000, despesaPrevista: 70000 },
+  { month: "Set", receitaRealizada: 0, despesaRealizada: 0, receitaPrevista: 130000, despesaPrevista: 72000 },
+  { month: "Out", receitaRealizada: 0, despesaRealizada: 0, receitaPrevista: 135000, despesaPrevista: 75000 },
+  { month: "Nov", receitaRealizada: 0, despesaRealizada: 0, receitaPrevista: 140000, despesaPrevista: 78000 },
+  { month: "Dez", receitaRealizada: 0, despesaRealizada: 0, receitaPrevista: 150000, despesaPrevista: 80000 },
 ];
 
 const annualSummaryItems = [
