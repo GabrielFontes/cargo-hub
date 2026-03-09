@@ -125,82 +125,78 @@ export function ProjecaoEditDialog({
   const isReceita = type === "receita";
   const totalValue = (isPrevisto ? previsto : valores).reduce((s, v) => s + v, 0);
 
-  const formContent = (
-    <div className="space-y-5">
-      {/* Values section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 text-xs">
-          <span className={isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Previsto</span>
-          <Switch
-            checked={!isPrevisto}
-            onCheckedChange={(checked) => setIsPrevisto(!checked)}
-            className="scale-75"
-          />
-          <span className={!isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Realizado</span>
-          {!isPrevisto && (
-            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-              <SelectTrigger className="w-20 h-7 text-xs ml-auto">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {YEARS.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        <div className="grid grid-cols-6 gap-x-2 gap-y-1.5">
-          {months.map((month, idx) => (
-            <div key={month} className="space-y-0.5">
-              <Label className="text-[10px] text-muted-foreground">{month}</Label>
-              <Input
-                type="number"
-                value={isPrevisto ? previsto[idx] : valores[idx]}
-                onChange={(e) => isPrevisto ? updatePrevisto(idx, e.target.value) : updateValor(idx, e.target.value)}
-                className="h-7 text-xs border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
-                step="0.01"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-end">
-          <span className="text-[11px] text-muted-foreground tabular-nums">
-            Total: <span className="font-semibold text-foreground">
-              R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-          </span>
-        </div>
+  const valuesSection = (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 text-xs">
+        <span className={isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Previsto</span>
+        <Switch
+          checked={!isPrevisto}
+          onCheckedChange={(checked) => setIsPrevisto(!checked)}
+          className="scale-75"
+        />
+        <span className={!isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Realizado</span>
+        {!isPrevisto && (
+          <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+            <SelectTrigger className="w-20 h-7 text-xs ml-auto">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {YEARS.map(year => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {/* Ficha Técnica checkbox - only for despesas */}
-      {type === "despesa" && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="fichaTecnica"
-              checked={hasFichaTecnica}
-              onCheckedChange={(checked) => {
-                setHasFichaTecnica(!!checked);
-                if (!checked) setFichaTecnica([]);
-              }}
+      <div className="grid grid-cols-6 gap-x-2 gap-y-1.5">
+        {months.map((month, idx) => (
+          <div key={month} className="space-y-0.5">
+            <Label className="text-[10px] text-muted-foreground">{month}</Label>
+            <Input
+              type="number"
+              value={isPrevisto ? previsto[idx] : valores[idx]}
+              onChange={(e) => isPrevisto ? updatePrevisto(idx, e.target.value) : updateValor(idx, e.target.value)}
+              className="h-7 text-xs border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
+              step="0.01"
             />
-            <label htmlFor="fichaTecnica" className="text-xs font-medium text-foreground cursor-pointer">
-              Ficha Técnica
-            </label>
           </div>
+        ))}
+      </div>
 
-          {hasFichaTecnica && (
-            <FichaTecnicaTab
-              items={fichaTecnica}
-              onChange={setFichaTecnica}
-              despesas={despesas}
-              readonly={false}
-            />
-          )}
-        </div>
+      <div className="flex justify-end">
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          Total: <span className="font-semibold text-foreground">
+            R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+
+  const fichaTecnicaSection = (
+    <div className="space-y-3 pt-4 border-t border-border">
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="fichaTecnica"
+          checked={hasFichaTecnica}
+          onCheckedChange={(checked) => {
+            setHasFichaTecnica(!!checked);
+            if (!checked) setFichaTecnica([]);
+          }}
+        />
+        <label htmlFor="fichaTecnica" className="text-xs font-medium text-foreground cursor-pointer">
+          Ficha Técnica
+        </label>
+      </div>
+
+      {hasFichaTecnica && (
+        <FichaTecnicaTab
+          items={fichaTecnica}
+          onChange={setFichaTecnica}
+          despesas={despesas}
+          readonly={false}
+        />
       )}
     </div>
   );
@@ -224,9 +220,12 @@ export function ProjecaoEditDialog({
         {/* Body */}
         {isReceita ? (
           <div className="flex-1 overflow-hidden flex">
-            <div className="flex-1 overflow-y-auto px-5 py-4 border-r border-border">
-              {formContent}
+            {/* Left: values + ficha técnica */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 border-r border-border space-y-4">
+              {valuesSection}
+              {fichaTecnicaSection}
             </div>
+            {/* Right: resumo */}
             <div className="w-[300px] shrink-0 overflow-y-auto px-4 py-4">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumo</span>
               <div className="mt-3">
@@ -235,8 +234,9 @@ export function ProjecaoEditDialog({
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {formContent}
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            {valuesSection}
+            {fichaTecnicaSection}
           </div>
         )}
 
