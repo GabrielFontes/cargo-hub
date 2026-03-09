@@ -132,7 +132,7 @@ export function ProjecaoHeatmap({
               className={cn(
                 "px-2.5 py-1 text-[11px] font-medium rounded transition-colors",
                 selectedYears.includes(year)
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
