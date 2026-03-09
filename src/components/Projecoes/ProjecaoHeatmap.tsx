@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil } from "lucide-react";
+import { Search, Plus, Pencil, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProjecaoEditDialog } from "./ProjecaoEditDialog";
@@ -19,54 +19,58 @@ interface ProjecaoHeatmapProps {
 }
 
 const YEARS = [2023, 2024, 2025, 2026];
-const CURRENT_YEAR = 2026;
-
-function getCellStyle(value: number, maxValue: number, type: "expense" | "revenue" | "previsto"): string {
-  if (value === 0) return "bg-muted/40 text-muted-foreground";
-  const intensity = Math.min(value / maxValue, 1);
-
-  if (type === "previsto") {
-    const op = intensity > 0.5 ? "bg-primary/20 text-primary" : "bg-primary/8 text-primary/70";
-    return op;
-  } else if (type === "expense") {
-    if (intensity > 0.6) return "bg-destructive/25 text-destructive";
-    if (intensity > 0.3) return "bg-destructive/15 text-destructive/80";
-    return "bg-destructive/8 text-destructive/60";
-  } else {
-    if (intensity > 0.6) return "bg-emerald-500/25 text-emerald-700";
-    if (intensity > 0.3) return "bg-emerald-500/15 text-emerald-600/80";
-    return "bg-emerald-500/8 text-emerald-600/60";
-  }
-}
 
 function formatCurrency(value: number): string {
   if (value === 0) return "–";
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
   return value.toLocaleString('pt-BR');
 }
+
+function getBarWidth(value: number, maxValue: number): number {
+  if (value === 0 || maxValue === 0) return 0;
+  return Math.min((value / maxValue) * 100, 100);
+}
+
+const YEAR_COLORS: Record<number, { bar: string; text: string }> = {
+  2023: { bar: "bg-muted-foreground/15", text: "text-muted-foreground" },
+  2024: { bar: "bg-muted-foreground/25", text: "text-muted-foreground" },
+  2025: { bar: "bg-primary/20", text: "text-primary" },
+  2026: { bar: "bg-primary/35", text: "text-primary" },
+};
+
+const PREVISTO_COLOR = { bar: "bg-emerald-500/20", text: "text-emerald-600" };
 
 export function ProjecaoHeatmap({ 
   title, items, months, onAddItem, onEditItem, colorScheme, despesas = []
 }: ProjecaoHeatmapProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProjecaoItem | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  const yearKey = `valores${selectedYear}` as keyof ProjecaoItem;
-
-  const allValues = [
-    ...items.flatMap(i => i.previsto || []),
-    ...items.flatMap(item => (item[yearKey] as number[] | undefined) || []),
-  ].filter(v => v !== undefined && v > 0);
+  // Calculate max value across all years for consistent scale
+  const allValues = items.flatMap(item => 
+    YEARS.flatMap(y => {
+      const key = `valores${y}` as keyof ProjecaoItem;
+      return ((item[key] as number[]) || []);
+    }).concat(item.previsto || [])
+  ).filter(v => v > 0);
   const maxValue = Math.max(...allValues, 1);
 
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
+
+  const toggleExpand = (id: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const handleAddNew = () => {
     if (!newItemName.trim()) { setIsAdding(false); return; }
@@ -96,11 +100,15 @@ export function ProjecaoHeatmap({
     setEditDialogOpen(true);
   };
 
-  const calculateTotal = (monthIdx: number, type: "realizado" | "previsto"): number => {
-    return items.reduce((sum, item) => {
-      if (type === "previsto") return sum + (item.previsto?.[monthIdx] || 0);
-      return sum + ((item[yearKey] as number[])?.[monthIdx] || 0);
-    }, 0);
+  // Get annual total for an item
+  const getAnnualTotal = (item: ProjecaoItem, year: number): number => {
+    const key = `valores${year}` as keyof ProjecaoItem;
+    const vals = (item[key] as number[]) || Array(12).fill(0);
+    return vals.reduce((s, v) => s + v, 0);
+  };
+
+  const getPrevistoTotal = (item: ProjecaoItem): number => {
+    return (item.previsto || []).reduce((s, v) => s + v, 0);
   };
 
   return (
@@ -108,26 +116,6 @@ export function ProjecaoHeatmap({
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground mr-auto">{title}</h3>
-
-        {/* Year selector - single select for simplicity */}
-        <div className="flex items-center gap-1 bg-muted/40 rounded-md p-0.5">
-          {YEARS.map(year => (
-            <button
-              key={year}
-              onClick={() => setSelectedYear(year)}
-              className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded transition-colors",
-                selectedYear === year
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {year}
-            </button>
-          ))}
-        </div>
-
-        {/* Search */}
         <div className="relative w-44">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
@@ -140,88 +128,146 @@ export function ProjecaoHeatmap({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Header row with months */}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/50">
-              <th className="text-left py-2 px-3 text-[10px] text-muted-foreground font-normal uppercase tracking-wider min-w-[160px] sticky left-0 bg-card z-10">
+              <th className="text-left py-2 px-3 text-[10px] text-muted-foreground font-normal uppercase tracking-wider w-[180px] min-w-[180px] sticky left-0 bg-card z-10">
                 Item
               </th>
+              <th className="text-right py-2 px-2 text-[10px] text-muted-foreground font-normal w-[60px] min-w-[60px]">
+                Ano
+              </th>
               {months.map((month) => (
-                <React.Fragment key={month}>
-                  <th className="text-center py-2 px-1 text-[10px] text-muted-foreground font-normal min-w-[52px]">
-                    {month.slice(0, 3)}
-                  </th>
-                  <th className="text-center py-2 px-1 text-[10px] text-muted-foreground/50 font-normal min-w-[46px] italic">
-                    P
-                  </th>
-                </React.Fragment>
+                <th key={month} className="text-center py-2 px-0.5 text-[10px] text-muted-foreground font-normal min-w-[56px]">
+                  {month.slice(0, 3)}
+                </th>
               ))}
+              <th className="text-right py-2 px-3 text-[10px] text-muted-foreground font-normal min-w-[70px]">
+                Total
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {filteredItems.map(item => {
-              const yearValues = (item[yearKey] as number[] | undefined) || Array(12).fill(0);
+              const isExpanded = expandedItems.has(item.id);
+              // Show latest year + previsto by default, all years when expanded
+              const visibleYears = isExpanded ? YEARS : [YEARS[YEARS.length - 1]];
 
               return (
-                <tr key={item.id} className="group hover:bg-muted/10 transition-colors">
-                  <td className="py-1.5 px-3 sticky left-0 bg-card z-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-[11px] text-foreground">{item.name}</span>
-                      {item.hasFichaTecnica && (
-                        <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary/40" title="Tem ficha técnica" />
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
-                        onClick={() => openEditDialog(item)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </td>
-
-                  {months.map((_, monthIdx) => {
-                    const realizado = yearValues[monthIdx] ?? 0;
-                    const prev = item.previsto?.[monthIdx] || 0;
+                <React.Fragment key={item.id}>
+                  {/* Year rows */}
+                  {visibleYears.map((year, yearIdx) => {
+                    const yearKey = `valores${year}` as keyof ProjecaoItem;
+                    const yearValues = (item[yearKey] as number[]) || Array(12).fill(0);
+                    const yearTotal = yearValues.reduce((s, v) => s + v, 0);
+                    const colors = YEAR_COLORS[year] || YEAR_COLORS[2026];
+                    const isFirstRow = yearIdx === 0;
 
                     return (
-                      <React.Fragment key={monthIdx}>
-                        <td className="py-1 px-0.5">
-                          <div
-                            className={cn(
-                              "h-6 rounded-[4px] flex items-center justify-center text-[9px] font-medium tabular-nums",
-                              getCellStyle(realizado, maxValue, colorScheme)
-                            )}
-                            title={`R$ ${realizado.toLocaleString('pt-BR')}`}
-                          >
-                            {formatCurrency(realizado)}
-                          </div>
+                      <tr key={`${item.id}-${year}`} className="group hover:bg-muted/5 transition-colors">
+                        {isFirstRow ? (
+                          <td className="py-0 px-3 sticky left-0 bg-card z-0" rowSpan={isExpanded ? visibleYears.length + 1 : 2}>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => toggleExpand(item.id)}
+                                className="shrink-0 p-0.5 rounded hover:bg-muted/30 transition-colors"
+                              >
+                                <ChevronRight className={cn(
+                                  "h-3 w-3 text-muted-foreground transition-transform",
+                                  isExpanded && "rotate-90"
+                                )} />
+                              </button>
+                              <span className="truncate text-[11px] text-foreground font-medium">{item.name}</span>
+                              {item.hasFichaTecnica && (
+                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary/40" title="Ficha técnica" />
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+                                onClick={() => openEditDialog(item)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        ) : null}
+                        <td className="py-0.5 px-2 text-right">
+                          <span className={cn("text-[10px] tabular-nums font-medium", colors.text)}>{year}</span>
                         </td>
-                        <td className="py-1 px-0.5">
-                          <div
-                            className={cn(
-                              "h-6 rounded-[4px] flex items-center justify-center text-[9px] font-medium tabular-nums",
-                              getCellStyle(prev, maxValue, "previsto")
-                            )}
-                            title={`Previsto: R$ ${prev.toLocaleString('pt-BR')}`}
-                          >
-                            {formatCurrency(prev)}
-                          </div>
+                        {months.map((_, monthIdx) => {
+                          const val = yearValues[monthIdx] ?? 0;
+                          const width = getBarWidth(val, maxValue);
+                          return (
+                            <td key={monthIdx} className="py-0.5 px-0.5">
+                              <div className="h-5 relative rounded-[3px] bg-muted/20 overflow-hidden flex items-center">
+                                <div
+                                  className={cn("absolute left-0 top-0 bottom-0 rounded-[3px] transition-all", colors.bar)}
+                                  style={{ width: `${width}%` }}
+                                />
+                                <span className={cn(
+                                  "relative z-10 w-full text-center text-[9px] tabular-nums font-medium",
+                                  val === 0 ? "text-muted-foreground/40" : colors.text
+                                )}>
+                                  {formatCurrency(val)}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td className="py-0.5 px-3 text-right">
+                          <span className={cn("text-[10px] tabular-nums font-semibold", colors.text)}>
+                            {formatCurrency(yearTotal)}
+                          </span>
                         </td>
-                      </React.Fragment>
+                      </tr>
                     );
                   })}
-                </tr>
+
+                  {/* Previsto row */}
+                  <tr className="hover:bg-muted/5 transition-colors">
+                    <td className="py-0.5 px-2 text-right">
+                      <span className={cn("text-[10px] tabular-nums font-medium italic", PREVISTO_COLOR.text)}>Prev.</span>
+                    </td>
+                    {months.map((_, monthIdx) => {
+                      const val = item.previsto?.[monthIdx] || 0;
+                      const width = getBarWidth(val, maxValue);
+                      return (
+                        <td key={monthIdx} className="py-0.5 px-0.5">
+                          <div className="h-5 relative rounded-[3px] bg-muted/20 overflow-hidden flex items-center">
+                            <div
+                              className={cn("absolute left-0 top-0 bottom-0 rounded-[3px] transition-all", PREVISTO_COLOR.bar)}
+                              style={{ width: `${width}%` }}
+                            />
+                            <span className={cn(
+                              "relative z-10 w-full text-center text-[9px] tabular-nums font-medium",
+                              val === 0 ? "text-muted-foreground/40" : PREVISTO_COLOR.text
+                            )}>
+                              {formatCurrency(val)}
+                            </span>
+                          </div>
+                        </td>
+                      );
+                    })}
+                    <td className="py-0.5 px-3 text-right">
+                      <span className={cn("text-[10px] tabular-nums font-semibold", PREVISTO_COLOR.text)}>
+                        {formatCurrency(getPrevistoTotal(item))}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Spacer between items */}
+                  <tr><td colSpan={2 + months.length + 1} className="h-1.5" /></tr>
+                </React.Fragment>
               );
             })}
 
             {/* Add row */}
             <tr>
-              <td colSpan={1 + months.length * 2} className="py-1 px-3">
+              <td colSpan={2 + months.length + 1} className="py-1 px-3">
                 {isAdding ? (
                   <Input
                     autoFocus
@@ -243,38 +289,25 @@ export function ProjecaoHeatmap({
                 )}
               </td>
             </tr>
-
-            {/* Totals */}
-            <tr className="border-t border-border">
-              <td className="py-2 px-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium sticky left-0 bg-card z-0">
-                Total
-              </td>
-              {months.map((_, monthIdx) => {
-                const totalReal = calculateTotal(monthIdx, "realizado");
-                const totalPrev = calculateTotal(monthIdx, "previsto");
-                return (
-                  <React.Fragment key={monthIdx}>
-                    <td className="py-1.5 px-0.5">
-                      <div className={cn(
-                        "h-6 rounded-[4px] flex items-center justify-center text-[9px] font-semibold tabular-nums",
-                        colorScheme === "expense"
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-emerald-500/10 text-emerald-700"
-                      )}>
-                        {formatCurrency(totalReal)}
-                      </div>
-                    </td>
-                    <td className="py-1.5 px-0.5">
-                      <div className="h-6 rounded-[4px] flex items-center justify-center text-[9px] font-semibold tabular-nums bg-primary/8 text-primary">
-                        {formatCurrency(totalPrev)}
-                      </div>
-                    </td>
-                  </React.Fragment>
-                );
-              })}
-            </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 px-4 py-2 border-t border-border/50">
+        {YEARS.map(year => {
+          const colors = YEAR_COLORS[year];
+          return (
+            <div key={year} className="flex items-center gap-1.5">
+              <div className={cn("w-3 h-2 rounded-sm", colors.bar)} />
+              <span className={cn("text-[10px]", colors.text)}>{year}</span>
+            </div>
+          );
+        })}
+        <div className="flex items-center gap-1.5">
+          <div className={cn("w-3 h-2 rounded-sm", PREVISTO_COLOR.bar)} />
+          <span className={cn("text-[10px] italic", PREVISTO_COLOR.text)}>Previsto</span>
+        </div>
       </div>
 
       <ProjecaoEditDialog
