@@ -298,7 +298,7 @@ export function ProjecaoHeatmap({
                       );
                     })}
                     <td className="py-1 px-0.5">
-                      <div className="h-6 rounded flex items-center justify-center text-[9px] font-semibold tabular-nums bg-primary/10 text-primary">
+                      <div className="h-6 rounded flex items-center justify-center text-[9px] font-semibold tabular-nums bg-amber-500/10 text-amber-700">
                         {formatCurrency(totalPrev)}
                       </div>
                     </td>
