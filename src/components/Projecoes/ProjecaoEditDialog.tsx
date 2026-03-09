@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import {
 import { ProjecaoItem, FichaTecnicaItem, ResumoReceita } from "./types";
 import { FichaTecnicaTab } from "./FichaTecnicaTab";
 import { ResumoTab } from "./ResumoTab";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface DespesaOption {
   id: string;
@@ -53,7 +54,6 @@ export function ProjecaoEditDialog({
   const [valores, setValores] = useState<number[]>(Array(12).fill(0));
   const [hasFichaTecnica, setHasFichaTecnica] = useState(false);
   const [fichaTecnica, setFichaTecnica] = useState<FichaTecnicaItem[]>([]);
-  const [showFichaTecnica, setShowFichaTecnica] = useState(false);
   const [resumo, setResumo] = useState<ResumoReceita>({
     precoVendaUnidade: 0,
     custoTotalUnitario: 0,
@@ -73,7 +73,6 @@ export function ProjecaoEditDialog({
       setPrevisto([...(item.previsto || Array(12).fill(0))]);
       setHasFichaTecnica(item.hasFichaTecnica);
       setFichaTecnica(item.fichaTecnica || []);
-      setShowFichaTecnica(item.hasFichaTecnica);
       
       const key = `valores${selectedYear}` as keyof ProjecaoItem;
       setValores([...((item[key] as number[]) || Array(12).fill(0))]);
@@ -87,7 +86,6 @@ export function ProjecaoEditDialog({
       setValores(Array(12).fill(0));
       setHasFichaTecnica(false);
       setFichaTecnica([]);
-      setShowFichaTecnica(false);
     }
   }, [item, open, selectedYear]);
 
@@ -127,7 +125,7 @@ export function ProjecaoEditDialog({
   const isReceita = type === "receita";
   const totalValue = (isPrevisto ? previsto : valores).reduce((s, v) => s + v, 0);
 
-  const leftContent = (
+  const formContent = (
     <div className="space-y-5">
       {/* Values section */}
       <div className="space-y-3">
@@ -177,56 +175,33 @@ export function ProjecaoEditDialog({
         </div>
       </div>
 
-      {/* Ficha Técnica collapsible */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <button
-          onClick={() => {
-            if (!hasFichaTecnica) {
-              setHasFichaTecnica(true);
-              setShowFichaTecnica(true);
-            } else {
-              setShowFichaTecnica(!showFichaTecnica);
-            }
-          }}
-          className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted/20 transition-colors"
-        >
+      {/* Ficha Técnica checkbox - only for despesas */}
+      {type === "despesa" && (
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground">Ficha Técnica</span>
-            {hasFichaTecnica && (
-              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                {fichaTecnica.length} {fichaTecnica.length === 1 ? 'insumo' : 'insumos'}
-              </span>
-            )}
+            <Checkbox
+              id="fichaTecnica"
+              checked={hasFichaTecnica}
+              onCheckedChange={(checked) => {
+                setHasFichaTecnica(!!checked);
+                if (!checked) setFichaTecnica([]);
+              }}
+            />
+            <label htmlFor="fichaTecnica" className="text-xs font-medium text-foreground cursor-pointer">
+              Ficha Técnica
+            </label>
           </div>
-          <div className="flex items-center gap-2">
-            {hasFichaTecnica && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setHasFichaTecnica(false);
-                  setFichaTecnica([]);
-                  setShowFichaTecnica(false);
-                }}
-                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-              >
-                Remover
-              </button>
-            )}
-            {hasFichaTecnica && (showFichaTecnica ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />)}
-            {!hasFichaTecnica && <span className="text-muted-foreground text-[10px]">+ Adicionar</span>}
-          </div>
-        </button>
-        {showFichaTecnica && hasFichaTecnica && (
-          <div className="px-3 pb-3 border-t border-border pt-3">
+
+          {hasFichaTecnica && (
             <FichaTecnicaTab
               items={fichaTecnica}
               onChange={setFichaTecnica}
               despesas={despesas}
               readonly={false}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -246,14 +221,12 @@ export function ProjecaoEditDialog({
           </div>
         </div>
 
-        {/* Body - split layout for receitas */}
+        {/* Body */}
         {isReceita ? (
           <div className="flex-1 overflow-hidden flex">
-            {/* Left: values + ficha técnica */}
             <div className="flex-1 overflow-y-auto px-5 py-4 border-r border-border">
-              {leftContent}
+              {formContent}
             </div>
-            {/* Right: resumo */}
             <div className="w-[300px] shrink-0 overflow-y-auto px-4 py-4">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumo</span>
               <div className="mt-3">
@@ -263,7 +236,7 @@ export function ProjecaoEditDialog({
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            {leftContent}
+            {formContent}
           </div>
         )}
 
