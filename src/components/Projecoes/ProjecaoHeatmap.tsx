@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
-import { Search, Plus, Pencil, ExternalLink } from "lucide-react";
+import { Search, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProjecaoEditDialog } from "./ProjecaoEditDialog";
-import { ProjecaoSidePanel } from "./ProjecaoSidePanel";
 import { ProjecaoItem } from "./types";
 
 export type { ProjecaoItem } from "./types";
@@ -64,8 +63,6 @@ export function ProjecaoHeatmap({
   const [newItemName, setNewItemName] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProjecaoItem | null>(null);
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
-  const [sidePanelItem, setSidePanelItem] = useState<ProjecaoItem | null>(null);
 
   const showPrevisto = true;
 
@@ -138,14 +135,26 @@ export function ProjecaoHeatmap({
     setEditDialogOpen(true);
   };
 
-  const openSidePanel = (item: ProjecaoItem) => {
-    setSidePanelItem(item);
-    setSidePanelOpen(true);
-  };
-
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className={cn(
+              "w-3 h-3 rounded",
+              colorScheme === "expense" ? "bg-rose-500" : "bg-emerald-500"
+            )}></div>
+            <span>Realizado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-slate-400"></div>
+            <span>Previsto</span>
+          </div>
+        </div>
+      </div>
 
       {/* Search bar */}
       <div className="relative mb-4">
@@ -193,7 +202,7 @@ export function ProjecaoHeatmap({
         <table className="w-full text-xs border-separate border-spacing-0.5">
           <thead>
             <tr>
-              <th className="text-left p-1 text-muted-foreground font-normal min-w-[200px] w-[200px] sticky left-0 bg-card z-10">
+              <th className="text-left p-1 text-muted-foreground font-normal min-w-[180px] w-[180px] sticky left-0 bg-card z-10">
                 Item
               </th>
 
@@ -202,14 +211,16 @@ export function ProjecaoHeatmap({
                   {sortedSelectedYears.map(year => (
                     <th
                       key={`${month}-${year}`}
-                      className="text-center p-1 text-muted-foreground font-normal min-w-[60px] w-[60px]"
+                      className="text-center p-1 text-muted-foreground font-normal min-w-[55px] w-[55px]"
                     >
-                      {month.slice(0, 3)} {year}
+                      <span className="block text-[10px]">{month.slice(0, 3)}</span>
+                      <span className="block text-[9px] opacity-60">{year}</span>
                     </th>
                   ))}
                   {showPrevisto && (
-                    <th className="text-center p-1 text-muted-foreground font-normal min-w-[60px] w-[60px]">
-                      {month.slice(0, 3)} P
+                    <th className="text-center p-1 text-muted-foreground font-normal min-w-[55px] w-[55px]">
+                      <span className="block text-[10px]">{month.slice(0, 3)}</span>
+                      <span className="block text-[9px] opacity-60">Prev</span>
                     </th>
                   )}
                 </React.Fragment>
@@ -219,30 +230,21 @@ export function ProjecaoHeatmap({
 
           <tbody>
             {filteredItems.map(item => (
-              <tr key={item.id}>
+              <tr key={item.id} className="group">
                 <td
-                  className="p-1 text-foreground truncate max-w-[200px] w-[200px] h-8 align-middle sticky left-0 bg-card z-0"
+                  className="p-1 text-foreground truncate max-w-[180px] w-[180px] h-8 align-middle sticky left-0 bg-card z-0"
                   title={item.name}
                 >
                   <div className="flex items-center gap-1">
-                    <span className="truncate flex-1">{item.name}</span>
+                    <span className="truncate flex-1 text-[11px]">{item.name}</span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
+                      className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => openEditDialog(item)}
                       title="Editar"
                     >
                       <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
-                      onClick={() => openSidePanel(item)}
-                      title="Abrir painel"
-                    >
-                      <ExternalLink className="h-3 w-3" />
                     </Button>
                   </div>
                 </td>
@@ -253,10 +255,10 @@ export function ProjecaoHeatmap({
                       const key = `valores${year}` as keyof ProjecaoItem;
                       const value = (item[key] as number[] | undefined)?.[monthIdx] ?? 0;
                       return (
-                        <td key={`${monthIdx}-${year}`} className="p-0.5 w-[60px] h-8">
+                        <td key={`${monthIdx}-${year}`} className="p-0.5 w-[55px] h-7">
                           <div
                             className={cn(
-                              "w-full h-full rounded flex items-center justify-center text-[10px] font-medium",
+                              "w-full h-full rounded flex items-center justify-center text-[9px] font-medium",
                               getHeatmapColor(value, maxValue, colorScheme),
                               value > 0 ? "text-white" : "text-muted-foreground"
                             )}
@@ -269,10 +271,10 @@ export function ProjecaoHeatmap({
                     })}
 
                     {showPrevisto && (
-                      <td className="p-0.5 w-[60px] h-8">
+                      <td className="p-0.5 w-[55px] h-7">
                         <div
                           className={cn(
-                            "w-full h-full rounded flex items-center justify-center text-[10px] font-medium",
+                            "w-full h-full rounded flex items-center justify-center text-[9px] font-medium",
                             getHeatmapColor(item.previsto?.[monthIdx] || 0, maxValue, "previsto"),
                             (item.previsto?.[monthIdx] || 0) > 0 ? "text-white" : "text-muted-foreground"
                           )}
@@ -326,8 +328,8 @@ export function ProjecaoHeatmap({
 
             {/* Total row */}
             <tr className="bg-muted/30 font-medium">
-              <td className="p-1.5 text-right text-[11px] text-muted-foreground pr-3 sticky left-0 bg-card z-0">
-                Total Mensal
+              <td className="p-1.5 text-right text-[10px] text-muted-foreground pr-3 sticky left-0 bg-card z-0">
+                Total
               </td>
 
               {months.map((_, monthIdx) => {
@@ -341,13 +343,13 @@ export function ProjecaoHeatmap({
                       .map(year => (
                         <td 
                           key={`${monthIdx}-${year}`} 
-                          className="p-0.5 w-[60px] h-8 bg-muted/10"
+                          className="p-0.5 w-[55px] h-7 bg-muted/10"
                         />
                       ))}
 
                     <td
                       className={cn(
-                        "p-1 text-center text-[11px] rounded h-8 min-w-[60px] font-semibold",
+                        "p-0.5 text-center text-[9px] rounded h-7 min-w-[55px] font-semibold",
                         colorScheme === "expense" 
                           ? "bg-rose-500/20 text-rose-700" 
                           : "bg-emerald-500/20 text-emerald-700"
@@ -361,13 +363,13 @@ export function ProjecaoHeatmap({
                       .map(year => (
                         <td 
                           key={`${monthIdx}-${year}`} 
-                          className="p-0.5 w-[60px] h-8 bg-muted/10"
+                          className="p-0.5 w-[55px] h-7 bg-muted/10"
                         />
                       ))}
 
                     {showPrevisto && (
                       <td
-                        className="p-1 text-center text-[11px] rounded h-8 min-w-[60px] font-semibold bg-slate-500/20 text-slate-700"
+                        className="p-0.5 text-center text-[9px] rounded h-7 min-w-[55px] font-semibold bg-slate-500/20 text-slate-700"
                       >
                         {formatCurrency(totalPrevisto)}
                       </td>
@@ -380,20 +382,6 @@ export function ProjecaoHeatmap({
         </table>
       </div>
 
-      <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <div className={cn(
-            "w-3 h-3 rounded",
-            colorScheme === "expense" ? "bg-rose-500" : "bg-emerald-500"
-          )}></div>
-          <span>{colorScheme === "expense" ? "Realizado" : "Realizado"}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-slate-400"></div>
-          <span>Previsto</span>
-        </div>
-      </div>
-
       <ProjecaoEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
@@ -401,14 +389,6 @@ export function ProjecaoHeatmap({
         onSave={onEditItem}
         months={months}
         type={colorScheme === "expense" ? "despesa" : "receita"}
-      />
-
-      <ProjecaoSidePanel
-        open={sidePanelOpen}
-        onOpenChange={setSidePanelOpen}
-        item={sidePanelItem}
-        type={colorScheme === "expense" ? "despesa" : "receita"}
-        onUpdate={onEditItem}
       />
     </div>
   );
