@@ -124,9 +124,115 @@ export function ProjecaoEditDialog({
     setValores(newValores);
   };
 
+  const isReceita = type === "receita";
+  const totalValue = (isPrevisto ? previsto : valores).reduce((s, v) => s + v, 0);
+
+  const leftContent = (
+    <div className="space-y-5">
+      {/* Values section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 text-xs">
+          <span className={isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Previsto</span>
+          <Switch
+            checked={!isPrevisto}
+            onCheckedChange={(checked) => setIsPrevisto(!checked)}
+            className="scale-75"
+          />
+          <span className={!isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Realizado</span>
+          {!isPrevisto && (
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-20 h-7 text-xs ml-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div className="grid grid-cols-6 gap-x-2 gap-y-1.5">
+          {months.map((month, idx) => (
+            <div key={month} className="space-y-0.5">
+              <Label className="text-[10px] text-muted-foreground">{month}</Label>
+              <Input
+                type="number"
+                value={isPrevisto ? previsto[idx] : valores[idx]}
+                onChange={(e) => isPrevisto ? updatePrevisto(idx, e.target.value) : updateValor(idx, e.target.value)}
+                className="h-7 text-xs border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
+                step="0.01"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            Total: <span className="font-semibold text-foreground">
+              R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* Ficha Técnica collapsible */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <button
+          onClick={() => {
+            if (!hasFichaTecnica) {
+              setHasFichaTecnica(true);
+              setShowFichaTecnica(true);
+            } else {
+              setShowFichaTecnica(!showFichaTecnica);
+            }
+          }}
+          className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted/20 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">Ficha Técnica</span>
+            {hasFichaTecnica && (
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                {fichaTecnica.length} {fichaTecnica.length === 1 ? 'insumo' : 'insumos'}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {hasFichaTecnica && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHasFichaTecnica(false);
+                  setFichaTecnica([]);
+                  setShowFichaTecnica(false);
+                }}
+                className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Remover
+              </button>
+            )}
+            {hasFichaTecnica && (showFichaTecnica ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />)}
+            {!hasFichaTecnica && <span className="text-muted-foreground text-[10px]">+ Adicionar</span>}
+          </div>
+        </button>
+        {showFichaTecnica && hasFichaTecnica && (
+          <div className="px-3 pb-3 border-t border-border pt-3">
+            <FichaTecnicaTab
+              items={fichaTecnica}
+              onChange={setFichaTecnica}
+              despesas={despesas}
+              readonly={false}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col gap-0 p-0">
+      <DialogContent className={`${isReceita ? 'max-w-4xl' : 'max-w-2xl'} max-h-[80vh] overflow-hidden flex flex-col gap-0 p-0`}>
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-border">
           <div className="flex items-center gap-3">
@@ -140,114 +246,26 @@ export function ProjecaoEditDialog({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Values section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-xs">
-              <span className={isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Previsto</span>
-              <Switch
-                checked={!isPrevisto}
-                onCheckedChange={(checked) => setIsPrevisto(!checked)}
-                className="scale-75"
-              />
-              <span className={!isPrevisto ? "text-foreground font-medium" : "text-muted-foreground"}>Realizado</span>
-              {!isPrevisto && (
-                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="w-20 h-7 text-xs ml-auto">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {YEARS.map(year => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+        {/* Body - split layout for receitas */}
+        {isReceita ? (
+          <div className="flex-1 overflow-hidden flex">
+            {/* Left: values + ficha técnica */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 border-r border-border">
+              {leftContent}
             </div>
-
-            <div className="grid grid-cols-6 gap-x-2 gap-y-1.5">
-              {months.map((month, idx) => (
-                <div key={month} className="space-y-0.5">
-                  <Label className="text-[10px] text-muted-foreground">{month}</Label>
-                  <Input
-                    type="number"
-                    value={isPrevisto ? previsto[idx] : valores[idx]}
-                    onChange={(e) => isPrevisto ? updatePrevisto(idx, e.target.value) : updateValor(idx, e.target.value)}
-                    className="h-7 text-xs border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
-                    step="0.01"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end">
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                Total: <span className="font-semibold text-foreground">
-                  R$ {(isPrevisto ? previsto : valores).reduce((s, v) => s + v, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-              </span>
+            {/* Right: resumo */}
+            <div className="w-[300px] shrink-0 overflow-y-auto px-4 py-4">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumo</span>
+              <div className="mt-3">
+                <ResumoTab resumo={resumo} onChange={setResumo} />
+              </div>
             </div>
           </div>
-
-          {/* Ficha Técnica collapsible */}
-          <div className="border border-border rounded-lg overflow-hidden">
-            <button
-              onClick={() => {
-                if (!hasFichaTecnica) {
-                  setHasFichaTecnica(true);
-                  setShowFichaTecnica(true);
-                } else {
-                  setShowFichaTecnica(!showFichaTecnica);
-                }
-              }}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted/20 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">Ficha Técnica</span>
-                {hasFichaTecnica && (
-                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                    {fichaTecnica.length} {fichaTecnica.length === 1 ? 'insumo' : 'insumos'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {hasFichaTecnica && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setHasFichaTecnica(false);
-                      setFichaTecnica([]);
-                      setShowFichaTecnica(false);
-                    }}
-                    className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    Remover
-                  </button>
-                )}
-                {hasFichaTecnica && (showFichaTecnica ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />)}
-                {!hasFichaTecnica && <span className="text-muted-foreground text-[10px]">+ Adicionar</span>}
-              </div>
-            </button>
-            {showFichaTecnica && hasFichaTecnica && (
-              <div className="px-3 pb-3 border-t border-border pt-3">
-                <FichaTecnicaTab
-                  items={fichaTecnica}
-                  onChange={setFichaTecnica}
-                  despesas={despesas}
-                  readonly={false}
-                />
-              </div>
-            )}
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {leftContent}
           </div>
-
-          {/* Resumo for receitas */}
-          {type === "receita" && (
-            <div className="space-y-2">
-              <span className="text-xs font-medium text-foreground">Resumo</span>
-              <ResumoTab resumo={resumo} onChange={setResumo} />
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
