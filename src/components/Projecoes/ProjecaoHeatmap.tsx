@@ -15,7 +15,7 @@ interface ProjecaoHeatmapProps {
   onAddItem: (item: ProjecaoItem) => void;
   onEditItem: (item: ProjecaoItem) => void;
   colorScheme: "expense" | "revenue";
-  despesas?: { id: string; name: string }[];
+  despesas?: { id: string; name: string; precoMedio?: number; medida?: string; faixaMin?: number; faixaMax?: number }[];
 }
 
 const YEARS = [2023, 2024, 2025, 2026];

@@ -3,22 +3,40 @@ export interface ProjecaoItem {
   name: string;
   conta?: string; // Plano de contas
   hasFichaTecnica: boolean;
-  // Valores realizados por ano
+  // Valores realizados por ano (R$ totais)
   valores2022: number[];
   valores2023: number[];
   valores2024: number[];
   valores2025: number[];
   valores2026: number[];
-  // Valores previstos (só ano atual)
+  // Valores previstos (R$ totais)
   previsto: number[];
+
+  // ===== Metadados (PDF) =====
+  // Receitas
+  precoUnitario?: number;       // Preço de venda unitário
+  medida?: string;              // Atendimento, Sessão, un, etc
+  cmv?: number;                 // Custo de mercadoria vendida
+  impostoPercent?: number;      // %Imposto
+  variavelPercent?: number;     // %Variável
+  comissaoPercent?: number;     // %Comissão
+  // Despesas (insumos)
+  faixaMin?: number;            // Faixa de preço mínima
+  faixaMax?: number;            // Faixa de preço máxima
+  precoMedio?: number;          // Preço médio do insumo
+
+  // Quantidades mês a mês (ano vigente)
+  qtdProj?: number[];           // 12 — quantidade prevista
+  qtdReal?: number[];           // 12 — quantidade realizada
+
   // Sazonalidade (apenas para receitas)
   sazonalidade?: {
-    notas: number[]; // 1-3 para cada mês
-    percentuais: number[]; // calculado automaticamente
+    notas: number[];
+    percentuais: number[];
   };
   // Ficha técnica
   fichaTecnica?: FichaTecnicaItem[];
-  // Preços (para despesas)
+  // Preços
   precos?: PrecoItem[];
   // Resumo (para receitas)
   resumo?: ResumoReceita;
@@ -29,12 +47,16 @@ export interface FichaTecnicaItem {
   materiaPrima: string;
   composto: boolean;
   fixo: boolean;
-  custo: number;
-  unidade: string;
-  medida: string;
-  qntReal: number;
-  qnt: number;
-  custoTotal: number;
+  // CUSTO
+  custoUn: string;        // Un. (Unidade, Caixa, Pacote)
+  custoMedida: number;    // qtd da embalagem (ex: 100, 50)
+  custoUnitario: number;  // R$ Custo Unit
+  // CAPACIDADE
+  capUn: string;          // un, mL, ml, par, etc
+  capMedida: number;      // qtd referência
+  qntReal: number;        // % efetivo (1.00 = 100%)
+  qnt: number;            // qtd usada por atendimento
+  custoTotal: number;     // calculado
 }
 
 export interface PrecoItem {
@@ -52,8 +74,18 @@ export interface ResumoReceita {
   impostoPercentual: number;
   impostoValor: number;
   custoAquisicao: number;
+  comissaoPercentual: number;
+  comissaoValor: number;
   margemContribuicaoPercent: number;
   margemContribuicaoValor: number;
   lucroMedioPercent: number;
   lucroMedioValor: number;
+}
+
+export interface IndicadorProjecao {
+  id: string;
+  name: string;
+  qtdProj: number[];   // 12 meses
+  qtdReal: number[];   // 12 meses
+  receitaId?: string;  // referência à receita vinculada (opcional)
 }
