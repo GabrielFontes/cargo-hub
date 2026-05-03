@@ -89,6 +89,8 @@ const initialReceitas: ProjecaoItem[] = [
       margemContribuicaoValor: 69,
       lucroMedioPercent: 46,
       lucroMedioValor: 69,
+      comissaoPercentual: 0,
+      comissaoValor: 0,
     },
   },
   {
