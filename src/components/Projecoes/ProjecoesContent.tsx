@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ProjecaoHeatmap } from "./ProjecaoHeatmap";
-import { ProjecaoItem } from "./types";
+import { IndicadoresProjecaoTab } from "./IndicadoresProjecaoTab";
+import { ProjecaoItem, IndicadorProjecao } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
