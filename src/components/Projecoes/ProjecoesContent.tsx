@@ -132,18 +132,19 @@ const initialReceitas: ProjecaoItem[] = [
 export function ProjecoesContent() {
   const [despesas, setDespesas] = useState<ProjecaoItem[]>(initialDespesas);
   const [receitas, setReceitas] = useState<ProjecaoItem[]>(initialReceitas);
+  const [indicadores, setIndicadores] = useState<IndicadorProjecao[]>([]);
 
   const handleAddDespesa = (item: ProjecaoItem) => setDespesas(prev => [...prev, item]);
-  const handleEditDespesa = (updatedItem: ProjecaoItem) => {
-    setDespesas(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
-  };
+  const handleEditDespesa = (u: ProjecaoItem) => setDespesas(prev => prev.map(i => i.id === u.id ? u : i));
   const handleAddReceita = (item: ProjecaoItem) => setReceitas(prev => [...prev, item]);
-  const handleEditReceita = (updatedItem: ProjecaoItem) => {
-    setReceitas(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
-  };
+  const handleEditReceita = (u: ProjecaoItem) => setReceitas(prev => prev.map(i => i.id === u.id ? u : i));
 
-  // Despesas as selectable options for ficha técnica
-  const despesaOptions = despesas.map(d => ({ id: d.id, name: d.name }));
+  // Despesas com metadados completos para a ficha técnica
+  const despesaOptions = despesas.map(d => ({
+    id: d.id, name: d.name,
+    precoMedio: d.precoMedio, medida: d.medida,
+    faixaMin: d.faixaMin, faixaMax: d.faixaMax,
+  }));
 
   return (
     <main className="flex-1 bg-background overflow-y-auto scrollbar-thin">
@@ -151,7 +152,7 @@ export function ProjecoesContent() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">Projeções</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Receitas e despesas — previsto vs realizado
+            Receitas, despesas e indicadores — previsto vs realizado
           </p>
         </div>
 
@@ -162,6 +163,9 @@ export function ProjecoesContent() {
             </TabsTrigger>
             <TabsTrigger value="receitas" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700">
               Receitas
+            </TabsTrigger>
+            <TabsTrigger value="indicadores" className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-700">
+              Indicadores
             </TabsTrigger>
           </TabsList>
 
@@ -185,6 +189,15 @@ export function ProjecoesContent() {
               onEditItem={handleEditReceita}
               colorScheme="revenue"
               despesas={despesaOptions}
+            />
+          </TabsContent>
+
+          <TabsContent value="indicadores">
+            <IndicadoresProjecaoTab
+              indicadores={indicadores}
+              receitas={receitas}
+              months={months}
+              onChange={setIndicadores}
             />
           </TabsContent>
         </Tabs>
