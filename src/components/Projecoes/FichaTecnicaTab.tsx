@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,11 @@ import { FichaTecnicaItem } from "./types";
 interface DespesaOption {
   id: string;
   name: string;
+  // metadados que vêm das despesas
+  precoMedio?: number;
+  medida?: string;
+  faixaMin?: number;
+  faixaMax?: number;
 }
 
 interface FichaTecnicaTabProps {
@@ -19,6 +25,16 @@ interface FichaTecnicaTabProps {
   onChange: (items: FichaTecnicaItem[]) => void;
   despesas?: DespesaOption[];
   readonly?: boolean;
+}
+
+const UNIDADES = ["Unidade", "Caixa", "Pacote", "Frasco", "Tubete", "Envelope", "Par", "Kit"];
+const CAP_UNIDADES = ["un", "mL", "g", "par", "envelope", "kit", "tubete"];
+
+function calcCustoTotal(item: FichaTecnicaItem): number {
+  // custo por unidade da capacidade = custoUnitario / custoMedida
+  const custoPorUnidade = item.custoMedida > 0 ? item.custoUnitario / item.custoMedida : 0;
+  // qntReal é fração (0-1). qnt é qtd nominal usada
+  return custoPorUnidade * item.qnt * (item.qntReal || 1);
 }
 
 export function FichaTecnicaTab({ items, onChange, despesas = [], readonly = false }: FichaTecnicaTabProps) {
@@ -31,21 +47,24 @@ export function FichaTecnicaTab({ items, onChange, despesas = [], readonly = fal
       materiaPrima: despesa.name,
       composto: false,
       fixo: false,
-      custo: 0,
-      unidade: "un",
-      medida: "",
-      qntReal: 0,
-      qnt: 0,
+      custoUn: "Unidade",
+      custoMedida: 1,
+      custoUnitario: despesa.precoMedio || 0,
+      capUn: despesa.medida || "un",
+      capMedida: 1,
+      qntReal: 1,
+      qnt: 1,
       custoTotal: 0,
     };
+    newItem.custoTotal = calcCustoTotal(newItem);
     onChange([...items, newItem]);
   };
 
   const updateItem = (id: string, field: keyof FichaTecnicaItem, value: any) => {
     const updated = items.map(item => {
       if (item.id === id) {
-        const newItem = { ...item, [field]: value };
-        newItem.custoTotal = newItem.custo * newItem.qnt;
+        const newItem = { ...item, [field]: value } as FichaTecnicaItem;
+        newItem.custoTotal = calcCustoTotal(newItem);
         return newItem;
       }
       return item;
@@ -53,72 +72,96 @@ export function FichaTecnicaTab({ items, onChange, despesas = [], readonly = fal
     onChange(updated);
   };
 
-  const removeItem = (id: string) => {
-    onChange(items.filter(item => item.id !== id));
-  };
+  const removeItem = (id: string) => onChange(items.filter(i => i.id !== id));
 
   const total = items.reduce((sum, item) => sum + item.custoTotal, 0);
   const availableDespesas = despesas.filter(d => !items.some(i => i.materiaPrima === d.name));
 
   return (
     <div className="space-y-3">
-      {/* Table header */}
       {items.length > 0 && (
-        <div className="grid grid-cols-[1fr_80px_60px_50px_80px_28px] gap-2 px-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Insumo</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider text-right">Custo</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider text-right">Qtd</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider text-center">Un</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider text-right">Subtotal</span>
-          <span></span>
+        <div className="overflow-x-auto rounded-md border border-border">
+          <table className="w-full text-[11px]">
+            <thead className="bg-muted/40">
+              <tr>
+                <th rowSpan={2} className="text-left px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium min-w-[180px]">Insumo</th>
+                <th rowSpan={2} className="px-1 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Cmp</th>
+                <th rowSpan={2} className="px-1 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Fix</th>
+                <th colSpan={3} className="px-1 py-1 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-l border-border">Custo</th>
+                <th colSpan={4} className="px-1 py-1 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-l border-border">Capacidade</th>
+                <th rowSpan={2} className="text-right px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium border-l border-border">Subtotal</th>
+                <th rowSpan={2}></th>
+              </tr>
+              <tr className="text-[9px] text-muted-foreground/80">
+                <th className="px-1 py-1 border-l border-border font-normal">Un</th>
+                <th className="px-1 py-1 font-normal">Med</th>
+                <th className="px-1 py-1 font-normal">R$ Unit</th>
+                <th className="px-1 py-1 border-l border-border font-normal">Un</th>
+                <th className="px-1 py-1 font-normal">Med</th>
+                <th className="px-1 py-1 font-normal">% Real</th>
+                <th className="px-1 py-1 font-normal">Qnt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id} className="group border-t border-border hover:bg-muted/20 transition-colors">
+                  <td className="px-2 py-1 text-[11px] truncate max-w-[200px]" title={item.materiaPrima}>{item.materiaPrima}</td>
+                  <td className="px-1 py-1 text-center">
+                    <Checkbox checked={item.composto} onCheckedChange={(c) => updateItem(item.id, "composto", !!c)} disabled={readonly} className="h-3 w-3" />
+                  </td>
+                  <td className="px-1 py-1 text-center">
+                    <Checkbox checked={item.fixo} onCheckedChange={(c) => updateItem(item.id, "fixo", !!c)} disabled={readonly} className="h-3 w-3" />
+                  </td>
+                  {/* CUSTO */}
+                  <td className="px-0.5 py-0.5 border-l border-border">
+                    <Select value={item.custoUn} onValueChange={(v) => updateItem(item.id, "custoUn", v)} disabled={readonly}>
+                      <SelectTrigger className="h-6 text-[10px] border-0 bg-muted/30 px-1.5 shadow-none w-[70px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>{UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-0.5 py-0.5">
+                    <Input type="number" value={item.custoMedida || ""} onChange={(e) => updateItem(item.id, "custoMedida", parseFloat(e.target.value) || 0)}
+                      className="h-6 w-14 text-[10px] text-right border-0 bg-muted/30 shadow-none px-1" disabled={readonly} />
+                  </td>
+                  <td className="px-0.5 py-0.5">
+                    <Input type="number" value={item.custoUnitario || ""} onChange={(e) => updateItem(item.id, "custoUnitario", parseFloat(e.target.value) || 0)}
+                      className="h-6 w-16 text-[10px] text-right border-0 bg-muted/30 shadow-none px-1" disabled={readonly} step="0.01" />
+                  </td>
+                  {/* CAPACIDADE */}
+                  <td className="px-0.5 py-0.5 border-l border-border">
+                    <Select value={item.capUn} onValueChange={(v) => updateItem(item.id, "capUn", v)} disabled={readonly}>
+                      <SelectTrigger className="h-6 text-[10px] border-0 bg-muted/30 px-1.5 shadow-none w-[55px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>{CAP_UNIDADES.map(u => <SelectItem key={u} value={u} className="text-xs">{u}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-0.5 py-0.5">
+                    <Input type="number" value={item.capMedida || ""} onChange={(e) => updateItem(item.id, "capMedida", parseFloat(e.target.value) || 0)}
+                      className="h-6 w-14 text-[10px] text-right border-0 bg-muted/30 shadow-none px-1" disabled={readonly} />
+                  </td>
+                  <td className="px-0.5 py-0.5">
+                    <Input type="number" value={item.qntReal === 0 ? "" : (item.qntReal * 100).toString()}
+                      onChange={(e) => updateItem(item.id, "qntReal", (parseFloat(e.target.value) || 0) / 100)}
+                      className="h-6 w-14 text-[10px] text-right border-0 bg-muted/30 shadow-none px-1" disabled={readonly} step="0.01" />
+                  </td>
+                  <td className="px-0.5 py-0.5">
+                    <Input type="number" value={item.qnt || ""} onChange={(e) => updateItem(item.id, "qnt", parseFloat(e.target.value) || 0)}
+                      className="h-6 w-12 text-[10px] text-right border-0 bg-muted/30 shadow-none px-1" disabled={readonly} step="0.01" />
+                  </td>
+                  <td className="px-2 py-1 text-right text-[11px] font-medium tabular-nums border-l border-border">R$ {item.custoTotal.toFixed(2)}</td>
+                  <td className="px-1 py-1">
+                    {!readonly && (
+                      <button onClick={() => removeItem(item.id)} className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all">
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Rows */}
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className="group grid grid-cols-[1fr_80px_60px_50px_80px_28px] gap-2 items-center px-1 py-1.5 rounded-md hover:bg-muted/20 transition-colors"
-        >
-          <span className="text-xs text-foreground truncate" title={item.materiaPrima}>
-            {item.materiaPrima}
-          </span>
-          <Input
-            type="number"
-            value={item.custo || ""}
-            onChange={(e) => updateItem(item.id, "custo", parseFloat(e.target.value) || 0)}
-            className="h-7 text-xs text-right border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
-            disabled={readonly}
-            step="0.01"
-          />
-          <Input
-            type="number"
-            value={item.qnt || ""}
-            onChange={(e) => updateItem(item.id, "qnt", parseFloat(e.target.value) || 0)}
-            className="h-7 text-xs text-right border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
-            disabled={readonly}
-          />
-          <Input
-            value={item.unidade}
-            onChange={(e) => updateItem(item.id, "unidade", e.target.value)}
-            className="h-7 text-xs text-center border-0 bg-muted/30 shadow-none focus-visible:bg-muted/50"
-            disabled={readonly}
-          />
-          <span className="text-xs font-medium text-foreground text-right tabular-nums">
-            R$ {item.custoTotal.toFixed(2)}
-          </span>
-          {!readonly && (
-            <button
-              onClick={() => removeItem(item.id)}
-              className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-      ))}
-
-      {/* Add from despesas */}
       {!readonly && availableDespesas.length > 0 && (
         <Select onValueChange={addRow}>
           <SelectTrigger className="h-8 text-xs text-muted-foreground border-dashed">
@@ -126,9 +169,7 @@ export function FichaTecnicaTab({ items, onChange, despesas = [], readonly = fal
           </SelectTrigger>
           <SelectContent>
             {availableDespesas.map(d => (
-              <SelectItem key={d.id} value={d.id} className="text-xs">
-                {d.name}
-              </SelectItem>
+              <SelectItem key={d.id} value={d.id} className="text-xs">{d.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -140,7 +181,6 @@ export function FichaTecnicaTab({ items, onChange, despesas = [], readonly = fal
         </p>
       )}
 
-      {/* Total */}
       {items.length > 0 && (
         <div className="flex justify-between items-center pt-2 border-t border-border px-1">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Custo total unitário</span>
